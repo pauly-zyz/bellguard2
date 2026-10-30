@@ -53,6 +53,7 @@ let wallet = null;
 const chainFor = (id) => defineChain({
   id, name: CFG.chains[id].name, nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
   rpcUrls: { default: { http: [CFG.chains[id].rpc] } },
+  contracts: CFG.chains[id].multicall3 ? { multicall3: { address: CFG.chains[id].multicall3 } } : undefined,
 });
 const dep = () => CFG.chains[chainId] && CFG.chains[chainId].deployment;
 // A deployment lists several pools (`pools`); the demo config has a single `pool`.
@@ -63,7 +64,30 @@ const poolKey = () => {
   const i = Math.max(0, $("pool-select").selectedIndex);
   return d.pools[i].key;
 };
-const client = () => createPublicClient({ chain: chainFor(chainId), transport: http(CFG.chains[chainId].rpc) });
+// The public RPC rate-limits hard, so: one multicall per refresh where available, and
+// patient retries. Clients are cached per chain.
+const clients = {};
+const client = () => clients[chainId] || (clients[chainId] = createPublicClient({
+  chain: chainFor(chainId),
+  transport: http(CFG.chains[chainId].rpc, { retryCount: 3, retryDelay: 1000, timeout: 20_000 }),
+}));
+
+/** Read several contract values in one round trip (multicall3) or, without it, one by one. */
+async function readMany(calls) {
+  const c = client();
+  if (CFG.chains[chainId].multicall3) {
+    return c.multicall({ contracts: calls, allowFailure: false });
+  }
+  const out = [];
+  for (const call of calls) out.push(await c.readContract(call));
+  return out;
+}
+
+let retryTimer = null;
+function scheduleRetry() {
+  clearTimeout(retryTimer);
+  retryTimer = setTimeout(refresh, 10_000);
+}
 const usd = (v) => "$" + Number(formatUnits(v, 6)).toLocaleString("en-US", { maximumFractionDigits: 2 });
 
 function log(id, msg, isError) {
@@ -101,15 +125,23 @@ async function refresh() {
     $("v-mine").textContent = "–";
     return;
   }
+  const fields = ["m-state", "m-surcharge", "v-assets", "v-price", "v-locked"];
+  for (const id of fields) if ($(id).textContent === "–") $(id).textContent = "Loading…";
   try {
-    const c = client();
-    const [closed, surcharge, assets, supply, locked] = await Promise.all([
-      c.readContract({ address: d.calendar, abi: ABI.calendar, functionName: "isClosedNow" }),
-      c.readContract({ address: d.hook, abi: ABI.hook, functionName: "currentSurchargeBps", args: [poolKey()] }),
-      c.readContract({ address: d.vault, abi: ABI.vault, functionName: "totalAssets" }),
-      c.readContract({ address: d.vault, abi: ABI.vault, functionName: "totalSupply" }),
-      c.readContract({ address: d.vault, abi: ABI.vault, functionName: "isLocked" }),
-    ]);
+    const reads = [
+      { address: d.calendar, abi: ABI.calendar, functionName: "isClosedNow" },
+      { address: d.hook, abi: ABI.hook, functionName: "currentSurchargeBps", args: [poolKey()] },
+      { address: d.vault, abi: ABI.vault, functionName: "totalAssets" },
+      { address: d.vault, abi: ABI.vault, functionName: "totalSupply" },
+      { address: d.vault, abi: ABI.vault, functionName: "isLocked" },
+    ];
+    if (account) {
+      reads.push(
+        { address: d.vault, abi: ABI.vault, functionName: "balanceOf", args: [account] },
+        { address: d.vault, abi: ABI.vault, functionName: "maxWithdraw", args: [account] },
+      );
+    }
+    const [closed, surcharge, assets, supply, locked, shares, maxW] = await readMany(reads);
     $("m-state").textContent = closed ? "Closed" : "Open";
     $("m-surcharge").textContent = (Number(surcharge) / 100).toFixed(2) + "%";
     $("v-assets").textContent = usd(assets);
@@ -118,15 +150,15 @@ async function refresh() {
       : "1.0000 USDG";
     $("v-locked").textContent = locked ? "Locked (closed or claims open)" : "Unlocked";
     if (account) {
-      const [shares, maxW] = await Promise.all([
-        c.readContract({ address: d.vault, abi: ABI.vault, functionName: "balanceOf", args: [account] }),
-        c.readContract({ address: d.vault, abi: ABI.vault, functionName: "maxWithdraw", args: [account] }),
-      ]);
-      const value = await c.readContract({ address: d.vault, abi: ABI.vault, functionName: "convertToAssets", args: [shares] });
+      const value = supply > 0n ? shares * assets / supply : 0n;
       $("v-mine").textContent = usd(value) + " (withdrawable now " + usd(maxW) + ")";
     }
+    if ($("v-log").dataset.readError) { log("v-log", ""); delete $("v-log").dataset.readError; }
   } catch (e) {
-    log("v-log", "Couldn't read contracts: " + (e.shortMessage || e.message), true);
+    for (const id of fields) if ($(id).textContent === "Loading…") $(id).textContent = "Unavailable";
+    $("v-log").dataset.readError = "1";
+    log("v-log", "Couldn't reach Robinhood Chain (" + (e.shortMessage || e.message).split("\n")[0] + "). Retrying in 10 seconds…", true);
+    scheduleRetry();
   }
 }
 
@@ -136,14 +168,11 @@ async function refreshAdmin() {
   const d = dep();
   const panel = $("admin");
   if (!d || !account) { panel.hidden = true; return; }
-  const c = client();
-  const rows = await Promise.all(ADMIN_CONTRACTS.map(async ([k, label]) => {
-    const [owner, pending] = await Promise.all([
-      c.readContract({ address: d[k], abi: ABI.owned, functionName: "owner" }),
-      c.readContract({ address: d[k], abi: ABI.owned, functionName: "pendingOwner" }),
-    ]);
-    return { k, label, owner, pending };
-  }));
+  const values = await readMany(ADMIN_CONTRACTS.flatMap(([k]) => [
+    { address: d[k], abi: ABI.owned, functionName: "owner" },
+    { address: d[k], abi: ABI.owned, functionName: "pendingOwner" },
+  ]));
+  const rows = ADMIN_CONTRACTS.map(([k, label], i) => ({ k, label, owner: values[2 * i], pending: values[2 * i + 1] }));
   const me = account.toLowerCase();
   const relevant = rows.some((r) => r.owner.toLowerCase() === me || r.pending.toLowerCase() === me);
   panel.hidden = !relevant;
@@ -180,12 +209,14 @@ window.addEventListener("eip6963:announceProvider", (e) => {
 window.dispatchEvent(new Event("eip6963:requestProvider"));
 
 function chooseWallet() {
+  window.dispatchEvent(new Event("eip6963:requestProvider"));
   const list = [...wallets.values()];
-  if (list.length === 0 && window.ethereum) {
-    list.push({ info: { uuid: "injected", name: "Browser wallet", icon: "" }, provider: window.ethereum });
+  if (window.ethereum && !list.some((w) => w.provider === window.ethereum)) {
+    list.push({ info: { uuid: "injected", name: "Browser default wallet", icon: "" }, provider: window.ethereum });
   }
   if (list.length === 0) return Promise.resolve(null);
-  if (list.length === 1) return Promise.resolve(list[0].provider);
+  // A single wallet in a page without the picker (tests, embedded browsers) connects directly.
+  if (list.length === 1 && !$("wallet-picker")) return Promise.resolve(list[0].provider);
   return new Promise((resolve) => {
     const box = $("wallet-picker");
     const ul = $("wallet-list");

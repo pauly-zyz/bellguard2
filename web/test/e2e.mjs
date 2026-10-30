@@ -71,10 +71,17 @@ async function openApp(browser, account) {
     };
   }, { account, rpcUrl: RPC });
   await page.goto(SITE + "/app.html", { waitUntil: "load" });
-  await page.click("#connect");
-  await page.waitForFunction(() => document.getElementById("w-log").textContent.includes("Connected"), null, { timeout: 15000 });
+  await connectWallet(page);
   await page.waitForTimeout(1500);
   return { page, errors };
+}
+
+async function connectWallet(page) {
+  await page.click("#connect");
+  // The app always offers a wallet picker; take the first (only) wallet.
+  await page.waitForSelector("#wallet-picker:not([hidden]) .wallet-option", { timeout: 10000 });
+  await page.click("#wallet-list .wallet-option");
+  await page.waitForFunction(() => document.getElementById("w-log").textContent.includes("Connected"), null, { timeout: 15000 });
 }
 
 const waitLog = (page, id, text, timeout = 30000) =>
@@ -169,8 +176,7 @@ try {
   // 5. After the claim deadline: pay out from the UI
   await warp(W0.end + 3600 + 2 * 86400 + 60);
   await page.reload({ waitUntil: "load" });
-  await page.click("#connect");
-  await page.waitForFunction(() => document.getElementById("w-log").textContent.includes("Connected"));
+  await connectWallet(page);
   await page.fill("#p-claim", claimId);
   const before = await pub.readContract({ address: D.usdg, abi: erc20, functionName: "balanceOf", args: [D.lpRouter] });
   await page.click("#pay");

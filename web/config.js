@@ -6,6 +6,7 @@ window.BELLGUARD_CONFIG = {
     4663: {
       name: "Robinhood Chain",
       rpc: "https://rpc.mainnet.chain.robinhood.com",
+      multicall3: "0xcA11bde05977b3631167028862bE2a173976CA11",
       mainnet: true,
       deployment: {
         "usdg": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
