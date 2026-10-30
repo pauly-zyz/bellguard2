@@ -125,7 +125,9 @@ function setDeployedUi() {
   const d = dep();
   $("network-name").textContent = CFG.chains[chainId].name;
   $("not-deployed").hidden = !!d;
-  $("mainnet-warning").hidden = !(d && CFG.chains[chainId].mainnet);
+  let dismissed = false;
+  try { dismissed = localStorage.getItem("bellguard.warningDismissed") === "1"; } catch { /* storage unavailable */ }
+  $("mainnet-warning").hidden = dismissed || !(d && CFG.chains[chainId].mainnet);
   $("liquidity").hidden = !(d && d.positionManager);
   const sel = $("pool-select");
   const pools = d && d.pools ? d.pools : [];
@@ -546,6 +548,10 @@ $("register").addEventListener("click", register);
 $("settle").addEventListener("click", settle);
 $("pay").addEventListener("click", payout);
 $("accept").addEventListener("click", acceptAll);
+$("dismiss-warning").addEventListener("click", () => {
+  try { localStorage.setItem("bellguard.warningDismissed", "1"); } catch { /* storage unavailable */ }
+  $("mainnet-warning").hidden = true;
+});
 $("lp-add").addEventListener("click", addLiquidity);
 for (const id of ["lp-usdg", "lp-range"]) $(id).addEventListener("change", () => planLiquidity().catch((e) => log("lp-log", e.shortMessage || e.message, true)));
 $("pool-select").addEventListener("change", () => planLiquidity().catch(() => {}));
