@@ -16,6 +16,7 @@ from .analysis import QuoteUsd, measure_window, stock_price
 from .blocks import BlockClock
 from .cache import Cache
 from .calendar import closed_windows
+from .chainlink import ChainlinkPrices
 from .pools import Pool, stock_tokens, v3_pools, v4_pool, weth_usdg_pool
 from .report import CoverTerms, build_report, load_rows
 from .rpc import DEFAULT_RPC, Rpc, RpcError
@@ -119,6 +120,13 @@ def cmd_scan(args: argparse.Namespace) -> None:
     quote_usd = QuoteUsd(rpc, cache, clock, ref)
     until = _date(args.until) if args.until else datetime.fromtimestamp(clock.latest_ts, timezone.utc)
     windows = closed_windows(_date(args.since), until)
+    chainlink = None
+    if not args.no_chainlink and windows:
+        lo = clock.block_at(windows[0].start_ts - 4 * 86400)
+        print(f"Loading Chainlink updates from block {lo:,} ...")
+        chainlink = ChainlinkPrices(rpc, cache, lo, clock.latest)
+        covered = sorted({p.stock_symbol for p in pools} & set(chainlink.symbols()))
+        print(f"  {len(chainlink.symbols())} Robinhood feeds found; covering {', '.join(covered) or 'none'}")
     print(f"Scanning {len(pools)} pools x {len(windows)} closed windows ...")
 
     rows = []
@@ -126,15 +134,17 @@ def cmd_scan(args: argparse.Namespace) -> None:
         for w in windows:
             try:
                 r = measure_window(rpc, cache, clock, p, w, settle_minutes=args.settle,
-                                   quote_usd=quote_usd)
+                                   quote_usd=quote_usd, chainlink=chainlink)
             except RpcError as e:
                 print(f"  ! {p.label} {w.start:%Y-%m-%d}: {e}")
                 continue
             rows.append(r.to_dict())
             bps = "n/a" if r.markout_bps is None else f"{r.markout_bps:+.1f} bps"
             gap = "n/a" if r.gap is None else f"{r.gap * 100:+.2f}%"
+            cl = ("" if r.markout_cl_usd is None else
+                  f"  | CL gap {r.cl_gap * 100:+.2f}% markout ${r.markout_cl_usd:,.0f}")
             print(f"  {p.label:<26} {w.start:%Y-%m-%d} gap {gap:>8}  markout ${r.markout_usd:>10,.0f}"
-                  f"  ({bps})  swaps {r.swaps_closed}")
+                  f"  ({bps})  swaps {r.swaps_closed}{cl}")
     if not rows:
         sys.exit("No results.")
     with open(args.out, "w", newline="") as f:
@@ -181,6 +191,7 @@ def main(argv: list[str] | None = None) -> None:
     s.add_argument("--top", type=int, default=10, help="max pools (by current notional)")
     s.add_argument("--min-notional", type=float, default=0.0)
     s.add_argument("--settle", type=int, default=60, help="minutes after reopen for p_reopen")
+    s.add_argument("--no-chainlink", action="store_true", help="skip Chainlink reference prices")
     s.add_argument("--out", default="results.csv")
     s.set_defaults(fn=cmd_scan)
 

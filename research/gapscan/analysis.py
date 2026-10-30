@@ -28,6 +28,7 @@ from . import chain
 from .abi import word_signed, words
 from .blocks import BlockClock
 from .cache import Cache
+from .chainlink import ChainlinkPrices
 from .calendar import ClosedWindow
 from .keccak import topic
 from .pools import Pool
@@ -177,6 +178,13 @@ class WindowResult:
     il_full_range: float | None
     quote_usd: float
     flags: list[str] = field(default_factory=list)
+    # Chainlink reference (None when the stock has no feed or no reopen update)
+    cl_close: float | None = None        # USD, last feed value before close
+    cl_reopen: float | None = None       # USD, feed value `settle` minutes after reopen
+    cl_gap: float | None = None
+    markout_cl_usd: float | None = None  # LP markout valued at cl_reopen
+    markout_cl_bps: float | None = None
+    pool_vs_cl_reopen: float | None = None  # pool price / Chainlink price - 1 at settle
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -187,7 +195,8 @@ class WindowResult:
 def measure_window(rpc: Rpc, cache: Cache, clock: BlockClock, pool: Pool,
                    window: ClosedWindow, *, settle_minutes: int = 60,
                    lookback_hours: int = 72,
-                   quote_usd: Callable[[Pool, int], float] = lambda p, b: 1.0
+                   quote_usd: Callable[[Pool, int], float] = lambda p, b: 1.0,
+                   chainlink: "ChainlinkPrices | None" = None,
                    ) -> WindowResult:
     b_look = clock.block_at(window.start_ts - lookback_hours * 3600)
     b_start = clock.block_at(window.start_ts)
@@ -224,7 +233,31 @@ def measure_window(rpc: Rpc, cache: Cache, clock: BlockClock, pool: Pool,
 
     gap = (p_reopen / p_close - 1) if p_close and p_reopen else None
     drift = (p_last_closed / p_close - 1) if p_close and p_last_closed else None
+
+    cl: dict[str, float | None] = {}
+    if chainlink is not None:
+        sym = pool.stock_symbol
+        before = chainlink.price_at(sym, b_start)
+        after_open = chainlink.first_after(sym, b_end, b_settle)
+        at_settle = chainlink.price_at(sym, b_settle)
+        if before is None:
+            flags.append("no_chainlink_feed" if sym not in chainlink.feeds else "no_chainlink_close")
+        elif after_open is None:
+            flags.append("no_chainlink_reopen_update")
+        if before is not None and after_open is not None and at_settle is not None and usd > 0:
+            ref_quote = at_settle.price / usd  # Chainlink USD price in quote tokens
+            mk = lp_markout(pool, closed, ref_quote)
+            cl = {
+                "cl_close": before.price,
+                "cl_reopen": at_settle.price,
+                "cl_gap": at_settle.price / before.price - 1,
+                "markout_cl_usd": mk * usd,
+                "markout_cl_bps": (mk / notional * 1e4) if notional else None,
+                "pool_vs_cl_reopen": (p_reopen / ref_quote - 1) if p_reopen else None,
+            }
+
     return WindowResult(
+        **cl,
         window=window.label,
         window_start=window.start.isoformat(),
         window_end=window.end.isoformat(),
@@ -265,10 +298,9 @@ class QuoteUsd:
         if pool.quote_token != chain.WETH or self.ref is None:
             return float("nan")
         if block not in self._memo:
-            lo = self.clock.block_at(self.clock.ts(block) - 24 * 3600)
-            swaps = fetch_swaps(self.rpc, self.cache, self.ref, lo, block,
-                                final_block=self.clock.latest)
+            floor = self.clock.block_at(self.clock.ts(block) - 24 * 3600)
+            last = last_swap_before(self.rpc, self.cache, self.ref, block, floor,
+                                    final_block=self.clock.latest)
             # ref pool's "stock" side is WETH, so stock_price = ETH in USDG
-            self._memo[block] = (stock_price(self.ref, swaps[-1].sqrt_price_x96)
-                                 if swaps else float("nan"))
+            self._memo[block] = stock_price(self.ref, last.sqrt_price_x96) if last else float("nan")
         return self._memo[block]

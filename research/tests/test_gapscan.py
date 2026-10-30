@@ -182,12 +182,59 @@ class ReportTest(unittest.TestCase):
         self.assertAlmostEqual(payout_usd(self.row(-5_000), t), 2_500)   # 5000 - 2500
         self.assertAlmostEqual(payout_usd(self.row(-50_000), t), 10_000) # capped at 1%
 
+    def test_capital_factor(self):
+        from gapscan.report import capital_factor
+        self.assertEqual(capital_factor(None), 1.0)
+        self.assertAlmostEqual(capital_factor(0.05), 1 - 1.05 ** -0.5)
+        self.assertLess(capital_factor(0.05), capital_factor(0.20))
+        # Check against direct v3 math: L(sqrtP - sqrtPa) + L(1/sqrtP - 1/sqrtPb) * P
+        L, P, w = 1000.0, 400.0, 0.2
+        pa, pb = P / (1 + w), P * (1 + w)
+        value = L * (P ** 0.5 - pa ** 0.5) + L * (P ** -0.5 - pb ** -0.5) * P
+        self.assertAlmostEqual(value / (2 * L * P ** 0.5), capital_factor(w))
+
+    def test_narrow_range_payout(self):
+        t = CoverTerms(deductible_bps=25, cap_bps=500, loading=1.0)
+        r = self.row(-500)  # 5 bps of full-range notional: no payout
+        self.assertEqual(payout_usd(r, t), 0.0)
+        self.assertGreater(payout_usd(r, t, 0.05), 0.0)  # ~200 bps of a ±5% LP's capital
+
+    def test_payout_prefers_chainlink_markout(self):
+        t = CoverTerms(deductible_bps=25, cap_bps=100, loading=1.0)
+        r = self.row(+1_000, markout_cl_usd=-5_000, cl_gap=-0.03)
+        self.assertAlmostEqual(payout_usd(r, t), 2_500)
+
     def test_report_renders(self):
         rows = [self.row(-5_000), self.row(1_000),
                 self.row(-1, flags=["reopen_not_settled"])]
         text = build_report(rows, CoverTerms(25, 500, 1.5))
         self.assertIn("usable: 2", text)
         self.assertIn("Break-even surcharge", text)
+        self.assertIn("LPs lost money in **1 of 2**", text)
+
+
+class ChainlinkTest(unittest.TestCase):
+    def test_feed_symbol(self):
+        from gapscan.chainlink import feed_symbol
+        self.assertEqual(feed_symbol("Robinhood TSLA / USD"), "TSLA")
+        self.assertEqual(feed_symbol("RHSPY / USD"), "SPY")
+        self.assertEqual(feed_symbol("Robinhood SGOV-USD"), "SGOV")
+        self.assertEqual(feed_symbol("Robinhood DELL-USD"), "DELL")
+        self.assertIsNone(feed_symbol("ETH / USD"))
+        self.assertIsNone(feed_symbol("SYRUPUSDC / USDC Exchange Rate"))
+
+    def test_price_lookup(self):
+        from gapscan.chainlink import ChainlinkPrices, Update
+        cp = ChainlinkPrices.__new__(ChainlinkPrices)
+        cp._series = {"TSLA": [Update(10, 0, 100.0, 0), Update(20, 1, 101.0, 0), Update(30, 0, 99.0, 0)]}
+        cp._blocks = {"TSLA": [(10, 0), (20, 1), (30, 0)]}
+        cp.feeds = {"TSLA": ["0xfeed"]}
+        self.assertIsNone(cp.price_at("TSLA", 9))
+        self.assertEqual(cp.price_at("TSLA", 20).price, 101.0)
+        self.assertEqual(cp.price_at("TSLA", 29).price, 101.0)
+        self.assertEqual(cp.first_after("TSLA", 20, 40).price, 99.0)
+        self.assertIsNone(cp.first_after("TSLA", 20, 25))
+        self.assertIsNone(cp.price_at("NVDA", 50))
 
 
 if __name__ == "__main__":
