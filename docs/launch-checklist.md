@@ -67,7 +67,7 @@ COIN and MSTR registered with Chainlink proxies.
 
 - [x] Treasury set to the project wallet `0x4b08C1DbE28e4e260037299e8cb4B34c7FBe2195`
 - [x] Ownership of calendar, vault, hook and claims proposed to the project wallet
-- [ ] **Project wallet accepts ownership** (app → connect wallet → Admin → Accept ownership)
+- [x] Project wallet accepted ownership of all four contracts (verified on-chain 2026-10-30)
 - [ ] Later: move ownership from the project wallet to a multisig
 
 - [x] Deploy with `script/Deploy.s.sol`
