@@ -1,6 +1,6 @@
 // Bellguard app: wallet, vault, claims and settlement. Uses viem from jsDelivr.
 import {
-  createPublicClient, createWalletClient, custom, http, parseAbi, formatUnits, parseUnits, defineChain,
+  createPublicClient, createWalletClient, custom, http, fallback, parseAbi, formatUnits, parseUnits, defineChain,
 } from "https://cdn.jsdelivr.net/npm/viem@2.21.54/+esm";
 
 const CFG = window.BELLGUARD_CONFIG;
@@ -67,10 +67,19 @@ const poolKey = () => {
 // The public RPC rate-limits hard, so: one multicall per refresh where available, and
 // patient retries. Clients are cached per chain.
 const clients = {};
-const client = () => clients[chainId] || (clients[chainId] = createPublicClient({
-  chain: chainFor(chainId),
-  transport: http(CFG.chains[chainId].rpc, { retryCount: 3, retryDelay: 1000, timeout: 20_000 }),
-}));
+const client = () => {
+  if (clients[chainId]) return clients[chainId];
+  const cfg = CFG.chains[chainId];
+  // Prefer the site's own relay (/api/rpc): it works even where the chain's RPC host is blocked.
+  const transports = [];
+  if (cfg.relay) transports.push(http(cfg.relay, { retryCount: 2, retryDelay: 800, timeout: 12_000 }));
+  transports.push(http(cfg.rpc, { retryCount: 2, retryDelay: 1000, timeout: 12_000 }));
+  clients[chainId] = createPublicClient({
+    chain: chainFor(chainId),
+    transport: transports.length > 1 ? fallback(transports) : transports[0],
+  });
+  return clients[chainId];
+};
 
 /** Read several contract values in one round trip (multicall3) or, without it, one by one. */
 async function readMany(calls) {
@@ -187,6 +196,18 @@ async function refreshAdmin() {
   $("accept").dataset.keys = pendingForMe.map((r) => r.k).join(",");
 }
 
+async function refreshAdminWithRetry() {
+  try {
+    await refreshAdmin();
+  } catch (e) {
+    // The Admin panel is hidden until owners are known, so report on the main log.
+    log("w-log", "Connected, but couldn't read contract owners yet (" + (e.shortMessage || e.message).split("\n")[0] + "). Retrying in 10 seconds…", true);
+    setTimeout(refreshAdminWithRetry, 10_000);
+    return;
+  }
+  log("w-log", "Connected to " + CFG.chains[chainId].name + ".");
+}
+
 async function acceptAll() {
   const d = dep();
   const keys = ($("accept").dataset.keys || "").split(",").filter(Boolean);
@@ -259,7 +280,7 @@ async function connect() {
     $("connect").textContent = account.slice(0, 6) + "…" + account.slice(-4);
     log("w-log", "Connected to " + CFG.chains[chainId].name + ".");
     await refresh();
-    await refreshAdmin().catch((e) => log("a-log", "Couldn't read owners: " + (e.shortMessage || e.message), true));
+    await refreshAdminWithRetry();
   } catch (e) {
     log("w-log", "Wallet connection failed: " + (e.shortMessage || e.message), true);
   }

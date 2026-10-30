@@ -6,6 +6,7 @@ window.BELLGUARD_CONFIG = {
     4663: {
       name: "Robinhood Chain",
       rpc: "https://rpc.mainnet.chain.robinhood.com",
+      relay: "/api/rpc?chain=4663",
       multicall3: "0xcA11bde05977b3631167028862bE2a173976CA11",
       mainnet: true,
       deployment: {
@@ -45,6 +46,7 @@ window.BELLGUARD_CONFIG = {
     46630: {
       name: "Robinhood Chain Testnet",
       rpc: "https://rpc.testnet.chain.robinhood.com",
+      relay: "/api/rpc?chain=46630",
       deployment: null, // run contracts/script/DeployTestnetDemo.s.sol and paste demo-46630.json here
     },
   },
