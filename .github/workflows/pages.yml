@@ -1,11 +1,10 @@
 name: Website
 
-# Publishes web/ to GitHub Pages. Enable it once in the repository:
-# Settings -> Pages -> Build and deployment -> Source: GitHub Actions.
+# Publishes web/ to GitHub Pages. Pages is not enabled yet, so this runs only by hand.
+# To go live: Settings -> Pages -> Source: GitHub Actions (private repos need a paid plan,
+# and the site is public), then run this workflow from the Actions tab. To deploy on every
+# push afterwards, add:  push: { branches: [main], paths: ["web/**"] }
 on:
-  push:
-    branches: [main]
-    paths: ["web/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
