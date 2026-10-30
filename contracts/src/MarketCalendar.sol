@@ -120,6 +120,18 @@ contract MarketCalendar {
         (closed,,) = closureAt(block.timestamp);
     }
 
+    /// @notice End of the latest closure that finished at or before `timestamp` (0 if none).
+    ///         The vault uses it to keep withdrawals locked while claims settle.
+    function lastClosureEnd(uint256 timestamp) external view returns (uint256) {
+        (bool found, uint256 i) = _lastStartingAtOrBefore(_closures, timestamp);
+        if (!found) return 0;
+        if (timestamp < _closures[i].end) {
+            // Inside closure i: the previous one is the latest that has ended.
+            return i == 0 ? 0 : _closures[i - 1].end;
+        }
+        return _closures[i].end;
+    }
+
     // ------------------------------------------------------------------ events
 
     function addEvent(address asset, EventWindow calldata e) external onlyOwner {
