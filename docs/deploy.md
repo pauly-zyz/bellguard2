@@ -10,8 +10,8 @@ and testnet (46630): `0x8366a39c…e40951`. The standard CREATE2 factory
 ## 0. Tooling
 
 ```bash
-git clone --recurse-submodules https://github.com/pauly-zyz/bellguard
-cd bellguard/contracts
+git clone --recurse-submodules https://github.com/pauly-zyz/bellguard2
+cd bellguard2/contracts
 forge test                    # 62 tests, must all pass
 cast wallet import deployer --interactive
 ```

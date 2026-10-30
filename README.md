@@ -40,8 +40,8 @@ large reopen gaps, not as a weekly loss refund.
 ## Quick start
 
 ```bash
-git clone --recurse-submodules https://github.com/pauly-zyz/bellguard
-cd bellguard
+git clone --recurse-submodules https://github.com/pauly-zyz/bellguard2
+cd bellguard2
 
 # Research (Python 3.11+, no dependencies)
 cd research
