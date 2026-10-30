@@ -16,3 +16,4 @@ research/report.md
 .idea/
 .vscode/
 contracts/deployments/*-31337.json
+node_modules/

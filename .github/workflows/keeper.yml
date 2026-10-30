@@ -1,0 +1,39 @@
+name: Settlement keeper
+
+# Settles Bellguard closed windows on Robinhood Chain mainnet. Runs hourly; the public
+# settle slot is two hours long, so every window gets at least one attempt.
+# Needs the repository secret KEEPER_PRIVATE_KEY (a dedicated wallet with a little ETH).
+# Optional secret RPC_URL for a paid RPC endpoint.
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only report, send no transaction"
+        type: boolean
+        default: true
+
+concurrency:
+  group: keeper
+  cancel-in-progress: false
+
+jobs:
+  settle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: keeper
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: Settle due windows
+        env:
+          KEEPER_PRIVATE_KEY: ${{ secrets.KEEPER_PRIVATE_KEY }}
+          RPC_URL: ${{ secrets.RPC_URL }}
+          DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '1' || (secrets.KEEPER_PRIVATE_KEY == '' && '1' || '0') }}
+        run: npm run settle

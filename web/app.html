@@ -75,6 +75,33 @@
       </dl>
     </section>
 
+    <section class="panel wide" id="liquidity" aria-labelledby="lp-h" hidden>
+      <h2 id="lp-h" style="font-size:var(--step-2)">Provide liquidity</h2>
+      <p style="color:var(--muted)">Add USDG and the stock token to the selected Bellguard pool on Uniswap v4. You receive a position NFT that is covered automatically. Wide ranges are safer: a claim needs your range to cover every price traded during the closed window.</p>
+      <dl class="kv">
+        <dt>Price</dt><dd id="lp-price">–</dd>
+        <dt>You also need</dt><dd id="lp-need">–</dd>
+      </dl>
+      <p class="banner" id="lp-warn" hidden></p>
+      <div class="row">
+        <div class="field"><label for="lp-usdg">USDG to add</label><input id="lp-usdg" inputmode="decimal" placeholder="100"></div>
+        <div class="field"><label for="lp-range">Price range</label>
+          <select id="lp-range">
+            <option value="0.25">±25% (recommended)</option>
+            <option value="0.5">±50%</option>
+            <option value="0.1">±10%</option>
+            <option value="full">Full range</option>
+          </select>
+        </div>
+        <button class="btn" id="lp-add" type="button" data-needs-deploy>Add liquidity</button>
+      </div>
+      <p class="log" id="lp-log"></p>
+      <div id="lp-positions-wrap" hidden>
+        <h3>Your positions (saved in this browser)</h3>
+        <ul id="lp-positions" class="positions"></ul>
+      </div>
+    </section>
+
     <section class="panel" aria-labelledby="v-h">
       <h2 id="v-h" style="font-size:var(--step-2)">Underwrite</h2>
       <p style="color:var(--muted)">Deposit USDG into the cover vault and earn closed-market premiums.</p>

@@ -1,6 +1,7 @@
 // Bellguard app: wallet, vault, claims and settlement. Uses viem from jsDelivr.
 import {
   createPublicClient, createWalletClient, custom, http, fallback, parseAbi, formatUnits, parseUnits, defineChain,
+  encodeAbiParameters, keccak256, parseEventLogs,
 } from "https://cdn.jsdelivr.net/npm/viem@2.21.54/+esm";
 
 const CFG = window.BELLGUARD_CONFIG;
@@ -30,6 +31,21 @@ const ABI = {
   ]),
   hook: parseAbi([
     "function currentSurchargeBps((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key) view returns (uint256)",
+  ]),
+  permit2: parseAbi([
+    "function allowance(address owner, address token, address spender) view returns (uint160 amount, uint48 expiration, uint48 nonce)",
+    "function approve(address token, address spender, uint160 amount, uint48 expiration)",
+  ]),
+  stateView: parseAbi([
+    "function getSlot0(bytes32 poolId) view returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)",
+    "function getLiquidity(bytes32 poolId) view returns (uint128)",
+  ]),
+  posm: parseAbi([
+    "function modifyLiquidities(bytes unlockData, uint256 deadline) payable",
+    "event Transfer(address indexed from, address indexed to, uint256 indexed id)",
+  ]),
+  feed: parseAbi([
+    "function latestRoundData() view returns (uint80, int256 answer, uint256, uint256 updatedAt, uint80)",
   ]),
   owned: parseAbi([
     "function owner() view returns (address)",
@@ -110,6 +126,7 @@ function setDeployedUi() {
   $("network-name").textContent = CFG.chains[chainId].name;
   $("not-deployed").hidden = !!d;
   $("mainnet-warning").hidden = !(d && CFG.chains[chainId].mainnet);
+  $("liquidity").hidden = !(d && d.positionManager);
   const sel = $("pool-select");
   const pools = d && d.pools ? d.pools : [];
   if (sel.dataset.chain !== String(chainId)) {
@@ -168,6 +185,154 @@ async function refresh() {
     $("v-log").dataset.readError = "1";
     log("v-log", "Couldn't reach Robinhood Chain (" + (e.shortMessage || e.message).split("\n")[0] + "). Retrying in 10 seconds…", true);
     scheduleRetry();
+  }
+}
+
+// ---------------------------------------------------------------- liquidity
+
+const POOL_KEY_TYPE = {
+  type: "tuple",
+  components: [
+    { name: "currency0", type: "address" }, { name: "currency1", type: "address" },
+    { name: "fee", type: "uint24" }, { name: "tickSpacing", type: "int24" }, { name: "hooks", type: "address" },
+  ],
+};
+const MAX_TICK = 887272;
+const poolIdOf = (key) => keccak256(encodeAbiParameters([POOL_KEY_TYPE], [key]));
+const currentPool = () => { const d = dep(); return d && d.pools ? d.pools[Math.max(0, $("pool-select").selectedIndex)] : null; };
+let lpPlan = null;
+
+/** Read pool state and turn the USDG amount + range into a mint plan (liquidity, token caps). */
+async function planLiquidity() {
+  const d = dep();
+  const pool = currentPool();
+  lpPlan = null;
+  if (!d || !pool || !d.positionManager) return;
+  const key = pool.key;
+  const usdgIs0 = key.currency0.toLowerCase() === d.usdg.toLowerCase();
+  const [slot0, feed] = await readMany([
+    { address: d.stateView, abi: ABI.stateView, functionName: "getSlot0", args: [poolIdOf(key)] },
+    { address: pool.feed, abi: ABI.feed, functionName: "latestRoundData" },
+  ]);
+  const [sqrtPriceX96, tick] = slot0;
+  const sp = Number(sqrtPriceX96) / 2 ** 96;
+  // pool price: USDG per stock (USDG 6 dec, stock 18 dec)
+  const raw = sp * sp; // token1 per token0, raw units
+  const poolPrice = usdgIs0 ? 1e12 / raw : raw * 1e12;
+  const feedPrice = Number(feed[1]) / 1e8;
+  $("lp-price").textContent = "$" + poolPrice.toFixed(2) + " in the pool · $" + feedPrice.toFixed(2) + " on Chainlink";
+  const gap = Math.abs(poolPrice / feedPrice - 1);
+  $("lp-warn").hidden = gap < 0.02;
+  $("lp-warn").textContent = "The pool price is " + (gap * 100).toFixed(1) + "% away from Chainlink. Arbitrage will move it once there is liquidity, so your position may be rebalanced right after you add it.";
+
+  const width = $("lp-range").value;
+  const sp60 = key.tickSpacing;
+  let tl, tu;
+  if (width === "full") {
+    tl = -Math.floor(MAX_TICK / sp60) * sp60; tu = -tl;
+  } else {
+    const delta = Math.log(1 + Number(width)) / Math.log(1.0001);
+    tl = Math.floor((tick - delta) / sp60) * sp60;
+    tu = Math.ceil((tick + delta) / sp60) * sp60;
+  }
+  const sa = Math.pow(1.0001, tl / 2), sb = Math.pow(1.0001, tu / 2);
+  const usdgRaw = parseUnits($("lp-usdg").value || "0", 6);
+  if (usdgRaw <= 0n) { $("lp-need").textContent = "–"; return; }
+  // Liquidity from the USDG side, then the stock amount that goes with it.
+  let L, stockRaw;
+  if (usdgIs0) {
+    L = Number(usdgRaw) / (1 / sp - 1 / sb);
+    stockRaw = L * (sp - sa);
+  } else {
+    L = Number(usdgRaw) / (sp - sa);
+    stockRaw = L * (1 / sp - 1 / sb);
+  }
+  const liquidity = BigInt(Math.floor(L * 0.999));
+  const stockMax = BigInt(Math.ceil(stockRaw * 1.01));
+  $("lp-need").textContent = Number(formatUnits(stockMax, 18)).toLocaleString("en-US", { maximumFractionDigits: 6 }) + " " + pool.symbol
+    + " (range $" + (usdgIs0 ? 1e12 / Math.pow(1.0001, tu) : Math.pow(1.0001, tl) * 1e12).toFixed(2)
+    + " – $" + (usdgIs0 ? 1e12 / Math.pow(1.0001, tl) : Math.pow(1.0001, tu) * 1e12).toFixed(2) + ")";
+  lpPlan = {
+    key, tl, tu, liquidity,
+    amount0Max: usdgIs0 ? usdgRaw : stockMax,
+    amount1Max: usdgIs0 ? stockMax : usdgRaw,
+    stock: pool.stock, symbol: pool.symbol,
+  };
+}
+
+async function ensurePermit2(token, amount) {
+  const d = dep();
+  const c = client();
+  const erc = await c.readContract({ address: token, abi: ABI.erc20, functionName: "allowance", args: [account, d.permit2] });
+  if (erc < amount) {
+    await send("lp-log", "Approve token for Permit2", { address: token, abi: ABI.erc20, functionName: "approve", args: [d.permit2, amount] });
+  }
+  const [amt, exp] = await c.readContract({ address: d.permit2, abi: ABI.permit2, functionName: "allowance", args: [account, token, d.positionManager] });
+  if (amt < amount || exp < Math.floor(Date.now() / 1000) + 600) {
+    const expiry = Math.floor(Date.now() / 1000) + 30 * 86400;
+    await send("lp-log", "Allow the position manager to use it", { address: d.permit2, abi: ABI.permit2, functionName: "approve", args: [token, d.positionManager, amount, expiry] });
+  }
+}
+
+async function addLiquidity() {
+  const d = dep();
+  try {
+    await planLiquidity();
+    if (!lpPlan) throw new Error("Enter a USDG amount first.");
+    const p = lpPlan;
+    const [bal0, bal1] = await readMany([
+      { address: p.key.currency0, abi: ABI.erc20, functionName: "balanceOf", args: [account] },
+      { address: p.key.currency1, abi: ABI.erc20, functionName: "balanceOf", args: [account] },
+    ]);
+    if (bal0 < p.amount0Max || bal1 < p.amount1Max) throw new Error("Your wallet doesn't hold enough USDG or " + p.symbol + " for this amount.");
+    await ensurePermit2(p.key.currency0, p.amount0Max);
+    await ensurePermit2(p.key.currency1, p.amount1Max);
+    const mint = encodeAbiParameters(
+      [POOL_KEY_TYPE, { type: "int24" }, { type: "int24" }, { type: "uint256" }, { type: "uint128" }, { type: "uint128" }, { type: "address" }, { type: "bytes" }],
+      [p.key, p.tl, p.tu, p.liquidity, p.amount0Max, p.amount1Max, account, "0x"],
+    );
+    const settle = encodeAbiParameters([{ type: "address" }, { type: "address" }], [p.key.currency0, p.key.currency1]);
+    const unlockData = encodeAbiParameters([{ type: "bytes" }, { type: "bytes[]" }], ["0x020d", [mint, settle]]);
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 900);
+    const receipt = await send("lp-log", "Add liquidity", { address: d.positionManager, abi: ABI.posm, functionName: "modifyLiquidities", args: [unlockData, deadline] });
+    const minted = parseEventLogs({ abi: ABI.posm, logs: receipt.logs, eventName: "Transfer" })
+      .find((l) => l.address.toLowerCase() === d.positionManager.toLowerCase() && BigInt(l.args.from) === 0n);
+    const tokenId = minted ? minted.args.id.toString() : "?";
+    savePosition({ chainId, symbol: p.symbol, tokenId, tickLower: p.tl, tickUpper: p.tu });
+    log("lp-log", "Position #" + tokenId + " added. It is covered from the next closed window, as long as you don't change it.");
+    renderPositions();
+  } catch (e) { log("lp-log", e.shortMessage || e.message, true); }
+}
+
+function loadPositions() {
+  try { return JSON.parse(localStorage.getItem("bellguard.positions") || "[]"); } catch { return []; }
+}
+function savePosition(pos) {
+  const list = loadPositions().filter((x) => !(x.chainId === pos.chainId && x.tokenId === pos.tokenId));
+  list.push(pos);
+  try { localStorage.setItem("bellguard.positions", JSON.stringify(list)); } catch { /* storage unavailable */ }
+}
+function renderPositions() {
+  const d = dep();
+  const list = loadPositions().filter((x) => x.chainId === chainId);
+  const ul = $("lp-positions");
+  ul.innerHTML = "";
+  $("lp-positions-wrap").hidden = list.length === 0;
+  for (const pos of list) {
+    const li = document.createElement("li");
+    li.textContent = pos.symbol + " / USDG · NFT #" + pos.tokenId + " · ticks " + pos.tickLower + " to " + pos.tickUpper + " ";
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "btn ghost"; b.textContent = "Use for claim";
+    b.addEventListener("click", () => {
+      const pools = d && d.pools ? d.pools : [];
+      const i = pools.findIndex((p) => p.symbol === pos.symbol);
+      if (i >= 0) $("pool-select").selectedIndex = i;
+      $("c-owner").value = d.positionManager; $("c-salt").value = pos.tokenId;
+      $("c-lower").value = pos.tickLower; $("c-upper").value = pos.tickUpper;
+      $("c-window").focus();
+    });
+    li.appendChild(b);
+    ul.appendChild(li);
   }
 }
 
@@ -381,5 +546,10 @@ $("register").addEventListener("click", register);
 $("settle").addEventListener("click", settle);
 $("pay").addEventListener("click", payout);
 $("accept").addEventListener("click", acceptAll);
+$("lp-add").addEventListener("click", addLiquidity);
+for (const id of ["lp-usdg", "lp-range"]) $(id).addEventListener("change", () => planLiquidity().catch((e) => log("lp-log", e.shortMessage || e.message, true)));
+$("pool-select").addEventListener("change", () => planLiquidity().catch(() => {}));
+renderPositions();
+planLiquidity().catch(() => {});
 refresh();
 setInterval(refresh, 30000);

@@ -10,6 +10,9 @@ window.BELLGUARD_CONFIG = {
       multicall3: "0xcA11bde05977b3631167028862bE2a173976CA11",
       mainnet: true,
       deployment: {
+        "positionManager": "0x58daec3116aae6d93017baaea7749052e8a04fa7",
+        "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+        "stateView": "0xf3334192d15450cdd385c8b70e03f9a6bd9e673b",
         "usdg": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
         "calendar": "0x8eeE13759042754C7a524030C09c7628BD580407",
         "vault": "0x4712BAc5Bfd40Fc0bAb7f4270890Bdcd9ba238a8",

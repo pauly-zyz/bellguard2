@@ -74,5 +74,7 @@ COIN and MSTR registered with Chainlink proxies.
 - [ ] Verify source on the explorer
 - [x] Publish the calendar months ahead (to June 2027)
 - [ ] Add earnings events
+- [x] Settlement keeper (keeper/, hourly GitHub Action; needs the KEEPER_PRIVATE_KEY secret)
+- [x] Add-liquidity panel in the app (v4 PositionManager, NFT positions are claimable)
 - [x] Register two stocks with Chainlink feeds (COIN, MSTR)
 - [ ] Low caps: small vault, low `MAX_WINDOW_BPS`, then raise gradually
