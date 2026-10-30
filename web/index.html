@@ -6,6 +6,8 @@
 <title>Bellguard</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="Gap cover for liquidity providers in Robinhood stock-token pools on Robinhood Chain.">
+<meta name="theme-color" content="#090e18">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 4c-5 0-8 4-8 9v6l-3 4h22l-3-4v-6c0-5-3-9-8-9z' fill='%23e2b052'/%3E%3Ccircle cx='16' cy='26.5' r='2.4' fill='%23e2b052'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,600;0,6..96,700;1,6..96,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
@@ -16,43 +18,57 @@
 <header class="topbar">
   <div class="wrap">
     <a class="brand" href="index.html" aria-label="Bellguard home">
-      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4c-5 0-8 4-8 9v6l-3 4h22l-3-4v-6c0-5-3-9-8-9z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="26.5" r="2.4" fill="currentColor"/><path d="M11 13h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="bell" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4c-5 0-8 4-8 9v6l-3 4h22l-3-4v-6c0-5-3-9-8-9z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="26.5" r="2.4" fill="currentColor"/><path d="M11 13h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       Bellguard
     </a>
     <nav class="nav" aria-label="Main">
-      <a href="#how">How it works</a>
-      <a href="#research">Research</a>
-      <a href="#join">LPs &amp; underwriters</a>
-      <a href="#status">Status</a>
+      <a href="#how" class="hide-sm">How it works</a>
+      <a href="#research" class="hide-sm">Research</a>
+      <a href="#join" class="hide-sm">Join</a>
+      <a href="#contracts" class="hide-sm">Contracts</a>
       <a href="https://github.com/pauly-zyz/bellguard2">GitHub</a>
+      <a class="btn" href="app.html">Launch app <span class="arrow" aria-hidden="true">→</span></a>
     </nav>
   </div>
 </header>
 
 <main>
-  <div class="wrap hero">
-    <div>
-      <p class="eyebrow">Gap cover on Robinhood Chain</p>
-      <h1 style="margin-top:14px">Your liquidity, covered until the <em>opening bell</em>.</h1>
-      <p class="lede">Stock tokens trade all weekend. The stock market doesn't. Bellguard charges a small, visible premium on swaps while the market is closed and pays liquidity providers when the reopen gap hurts them.</p>
-      <div class="ctas">
-        <a class="btn" href="app.html">Open the app</a>
-        <a class="btn ghost" href="#research">See the data</a>
-      </div>
-    </div>
-
-    <aside class="clock" id="clock" aria-live="polite">
-      <div class="state"><span class="pill open">Market open</span><span class="eyebrow" data-premium></span></div>
+  <div class="hero-band">
+    <div class="wrap hero">
       <div>
-        <div class="countdown">--</div>
-        <p class="sub" style="margin-top:8px">Loading calendar…</p>
+        <p class="eyebrow reveal">Live on Robinhood Chain · $BLGD</p>
+        <h1 class="reveal d1">Your liquidity, covered until the <em>opening&nbsp;bell</em>.</h1>
+        <p class="lede reveal d2">Stock tokens trade all weekend. The stock market doesn't. Bellguard charges a small premium on swaps while the market is closed, and pays liquidity providers when the Monday gap hurts them.</p>
+        <div class="ctas reveal d3">
+          <a class="btn big" href="app.html">Open the app <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn ghost big" href="#research">See the data</a>
+        </div>
+        <div class="facts reveal d3">
+          <div><b>1%</b><span>Deductible</span></div>
+          <div><b>5%</b><span>Max cover per window</span></div>
+          <div><b>0.10%</b><span>Weekend premium</span></div>
+          <div><b>v4</b><span>Uniswap hook</span></div>
+        </div>
       </div>
-      <div class="week" aria-label="This week's market hours, in UTC">
-        <div class="track"><div class="now"></div></div>
-        <div class="days"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
-      </div>
-      <div class="legend"><span class="l-open">Mint &amp; redeem open</span><span class="l-closed">Closed (weekend or US holiday)</span><span class="l-now">Now</span></div>
-    </aside>
+
+      <aside class="clock reveal d2" id="clock" aria-live="polite">
+        <div class="state"><span class="pill open">Market open</span></div>
+        <div class="dial" aria-hidden="true">
+          <svg viewBox="0 0 120 120"><circle class="track-ring" cx="60" cy="60" r="52"/><circle class="progress-ring" cx="60" cy="60" r="52" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/></svg>
+          <div class="center"><div><span class="label" data-dial-label>Until close</span><div class="countdown">--</div><span class="label" data-premium></span></div></div>
+        </div>
+        <p class="sub">Loading calendar…</p>
+        <div class="week" aria-label="This week's market hours, in UTC">
+          <div class="track"><div class="now"></div></div>
+          <div class="days"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+        </div>
+        <div class="legend"><span class="l-open">Open</span><span class="l-closed">Closed</span><span class="l-now">Now (UTC)</span></div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="tape" aria-label="Measured weekend gaps per pool">
+    <div class="tape-inner" id="tape"></div>
   </div>
 
   <section class="band" id="how">
@@ -60,22 +76,32 @@
       <div class="section-head">
         <p class="eyebrow">How it works</p>
         <h2>One weekend, start to finish</h2>
+        <p>Everything runs in a Uniswap v4 hook and three small contracts. No off-chain promises: the calendar, the premium and the payout rules are all on-chain.</p>
       </div>
-      <div class="steps">
-        <div class="step">
-          <span class="n">1</span>
-          <h3>Saturday 02:00 CET: the bell rings</h3>
-          <p>Robinhood stops minting and redeeming stock tokens, and the Chainlink stock feeds pause. Bellguard pools start charging a premium on each swap (0.10% by default, more around earnings) and log what liquidity providers trade.</p>
+      <div class="timeline">
+        <div class="tl-step">
+          <span class="tl-dot">1</span>
+          <span class="tl-when">Saturday · the bell</span>
+          <h3>Market closes</h3>
+          <p>Minting and redeeming stop and the Chainlink stock feeds pause. Bellguard pools start charging a premium on each swap.</p>
         </div>
-        <div class="step">
-          <span class="n">2</span>
+        <div class="tl-step">
+          <span class="tl-dot">2</span>
+          <span class="tl-when">All weekend</span>
           <h3>Premiums fill the vault</h3>
-          <p>Premiums paid in USDG go straight to the cover vault, where underwriters earn them. While the market is closed and claims are open, underwriters can't withdraw, so the cover is always there when it's needed.</p>
+          <p>Premiums in USDG go to the cover vault. Underwriters earn them and can't withdraw while cover is live.</p>
         </div>
-        <div class="step">
-          <span class="n">3</span>
-          <h3>Monday: the gap is settled</h3>
-          <p>An hour after reopen, the Chainlink price fixes what weekend trading cost each pool. Positions left untouched all weekend claim their loss above a 1% deductible, up to 5% of the position.</p>
+        <div class="tl-step">
+          <span class="tl-dot">3</span>
+          <span class="tl-when">Monday · reopen + 1h</span>
+          <h3>The gap is settled</h3>
+          <p>A keeper settles each pool against the Chainlink price. That fixes what weekend trading cost liquidity providers.</p>
+        </div>
+        <div class="tl-step">
+          <span class="tl-dot">4</span>
+          <span class="tl-when">Within 2 days</span>
+          <h3>LPs claim</h3>
+          <p>Positions held through the weekend claim the loss above a 1% deductible, up to 5% of the position.</p>
         </div>
       </div>
     </div>
@@ -86,23 +112,25 @@
       <div class="section-head">
         <p class="eyebrow">Research · measured on-chain</p>
         <h2>What weekends actually cost LPs</h2>
-        <p>Every closed window since late July, rebuilt from Uniswap v3 swap logs on Robinhood Chain. Each dot is one pool on one weekend. The height is the gap at reopen, and the colour shows whether LPs ended the weekend up or down, fees included.</p>
+        <p>Every closed window since late July, rebuilt from Uniswap v3 swap logs on Robinhood Chain. Each dot is one pool on one weekend. The height is the gap at reopen; the colour shows whether LPs ended up or down, fees included.</p>
       </div>
       <div class="stats">
         <div class="stat"><span class="v" data-stat="windows">–</span><span class="k">Pool-weekends measured</span></div>
-        <div class="stat"><span class="v" data-stat="lost">–</span><span class="k">Weekends where LPs lost money</span></div>
-        <div class="stat"><span class="v" data-stat="net">–</span><span class="k">Net LP result, all weekends</span></div>
+        <div class="stat"><span class="v" data-stat="lost">–</span><span class="k">Weekends where LPs lost</span></div>
+        <div class="stat"><span class="v" data-stat="net">–</span><span class="k">Net LP result</span></div>
         <div class="stat"><span class="v" data-stat="maxgap">–</span><span class="k">Largest reopen gap</span></div>
       </div>
-      <div class="chart"><svg role="img" aria-label="Reopen gap per pool and weekend"></svg></div>
-      <div class="legend" style="margin-top:8px"><span class="l-open">LPs gained</span><span class="l-closed">LPs lost</span></div>
+      <div class="chart-card">
+        <div class="chart"><svg role="img" aria-label="Reopen gap per pool and weekend"></svg></div>
+        <div class="legend" style="margin-top:8px"><span class="l-open">LPs gained</span><span class="l-closed">LPs lost</span></div>
+      </div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Pool</th><th>Weekends</th><th>LP lost</th><th>Net LP result</th><th>Worst weekend</th><th>Largest gap</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
-      <p class="note">So far, weekend fees have outweighed gap losses and no gap reached 2%, so none of these weekends would have triggered a payout. Bellguard is cover for the tail: rare, large reopen gaps such as earnings surprises. That is why the premium is low and the deductible sits at 1%. Reference prices here are pool prices 60 minutes after reopen; Chainlink-referenced results are next. Method and code: <a href="https://github.com/pauly-zyz/bellguard2/tree/main/research">research/gapscan</a>.</p>
+      <p class="note">So far, weekend fees have outweighed gap losses and no gap reached 2%, so none of these weekends would have paid out. Bellguard is cover for the tail: rare, large reopen gaps such as earnings surprises. That's why the premium is low and the deductible sits at 1%. Method and code: <a href="https://github.com/pauly-zyz/bellguard2/tree/main/research">research/gapscan</a>.</p>
     </div>
   </section>
 
@@ -114,8 +142,9 @@
       </div>
       <div class="split">
         <div class="panel">
+          <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
           <h3>Liquidity providers</h3>
-          <p>Add liquidity to a Bellguard stock/USDG pool on Uniswap v4. You're covered automatically. You pay nothing; weekend traders fund the cover.</p>
+          <p class="muted">Add liquidity to a Bellguard stock/USDG pool on Uniswap v4. You're covered automatically and pay nothing: weekend traders fund the cover.</p>
           <ul>
             <li>Keep the position unchanged from before the close until you claim.</li>
             <li>Your range must cover every price traded during the window.</li>
@@ -126,39 +155,53 @@
             <dt>Cap per window</dt><dd>5% of position value</dd>
             <dt>Reference price</dt><dd>Chainlink, after reopen</dd>
           </dl>
+          <a class="btn" href="app.html#liquidity">Add liquidity <span class="arrow" aria-hidden="true">→</span></a>
         </div>
         <div class="panel">
+          <span class="icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/><path d="M8 6V4h8v2"/></svg></span>
           <h3>Underwriters</h3>
-          <p>Deposit USDG into the cover vault (bgUSDG, ERC-4626). Premiums from closed-market swaps raise the share price; claims lower it.</p>
+          <p class="muted">Deposit USDG into the cover vault (bgUSDG, ERC-4626). Premiums from closed-market swaps raise the share price; claims lower it.</p>
           <ul>
             <li>Deposits are open any time.</li>
             <li>Withdrawals pause while the market is closed and for four days after reopen.</li>
-            <li>One window can pay out at most 20% of the vault. Larger claims are paid pro rata.</li>
+            <li>One window can pay out at most 20% of the vault; larger claims are paid pro rata.</li>
           </ul>
           <dl class="terms">
             <dt>Asset</dt><dd>USDG</dd>
             <dt>Premium (closed)</dt><dd>0.10%, ×1–10 for events</dd>
             <dt>Premium ceiling</dt><dd>3%, fixed in the contract</dd>
           </dl>
+          <a class="btn ghost" href="app.html">Underwrite <span class="arrow" aria-hidden="true">→</span></a>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="band" id="status">
+  <section class="band" id="contracts">
     <div class="wrap">
       <div class="section-head">
+        <p class="eyebrow">Robinhood Chain mainnet · chain 4663</p>
+        <h2>Deployed and verifiable</h2>
+        <p>Every rule lives in these contracts. Ownership uses a two-step handover.</p>
+      </div>
+      <div class="contracts" id="contract-list"></div>
+      <div class="section-head" style="margin:56px 0 20px">
         <p class="eyebrow">Where things stand</p>
-        <h2>Live on mainnet, not yet audited</h2>
       </div>
       <div class="status-list">
-        <div class="status-row"><span class="badge done">Done</span><p>Contracts: v4 hook, cover vault, claims and market calendar. 62 tests against the real Uniswap v4 PoolManager.</p></div>
-        <div class="status-row"><span class="badge done">Done</span><p>Testnet deployment simulated against live Robinhood Chain testnet state.</p></div>
-        <div class="status-row"><span class="badge done">Done</span><p>Research tool that measures gap losses from on-chain data.</p></div>
-        <div class="status-row"><span class="badge done">Live</span><p>Deployed on Robinhood Chain mainnet on 30 Oct 2026 with COIN/USDG and MSTR/USDG pools on Uniswap v4. <a href="https://github.com/pauly-zyz/bellguard2/blob/main/contracts/deployments/4663.json">Contract addresses</a>.</p></div>
-        <div class="status-row"><span class="badge todo">Next</span><p>Settlement keeper, first liquidity and underwriting deposits, ownership moved to a multisig.</p></div>
-        <div class="status-row"><span class="badge blocked">Required</span><p>Independent security audit, legal review of the cover product, and a multisig owner before any mainnet launch.</p></div>
+        <div class="status-row"><span class="badge done">Live</span><p>Hook, cover vault, claims and market calendar on mainnet with COIN/USDG and MSTR/USDG pools. 62 tests against the real Uniswap v4 PoolManager.</p></div>
+        <div class="status-row"><span class="badge done">Live</span><p>Settlement keeper runs every hour on GitHub Actions.</p></div>
+        <div class="status-row"><span class="badge todo">Next</span><p>First liquidity and underwriting deposits; ownership moved to a multisig.</p></div>
+        <div class="status-row"><span class="badge blocked">Required</span><p>Independent security audit and legal review of the cover product.</p></div>
       </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="wrap">
+      <h2>Hear the bell <em style="color:var(--brass)">before</em> it rings.</h2>
+      <p>Connect a wallet, pick a pool, and see the cover for the next closed window.</p>
+      <a class="btn big" href="app.html">Launch the app <span class="arrow" aria-hidden="true">→</span></a>
     </div>
   </section>
 </main>
@@ -170,6 +213,7 @@
   </div>
 </footer>
 
+<script src="config.js"></script>
 <script src="data.js"></script>
 <script src="site.js"></script>
 </body>

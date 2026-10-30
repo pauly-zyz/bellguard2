@@ -44,7 +44,23 @@
       ? (st.closed ? "Reopens " : "Next close (" + st.label + ") ") + fmtUtc(st.until)
       : "No windows published beyond this date.";
     const premium = root.querySelector("[data-premium]");
-    if (premium) premium.textContent = st.closed ? "Cover premium active on swaps" : "No premium while open";
+    if (premium) premium.textContent = st.closed ? "Premium live" : "No premium";
+    const dialLabel = root.querySelector("[data-dial-label]");
+    if (dialLabel) dialLabel.textContent = st.closed ? "Until reopen" : "Until close";
+
+    // Dial: how far through the current open or closed stretch we are.
+    const dial = root.querySelector(".dial");
+    if (dial && st.until) {
+      let from = null;
+      for (const [start, end] of WINDOWS) {
+        if (st.closed && end === st.until) { from = start; break; }
+        if (!st.closed && end <= now) from = end;
+      }
+      if (from == null) from = st.until - 5 * DAY;
+      const frac = Math.min(1, Math.max(0, (now - from) / (st.until - from)));
+      dial.classList.toggle("closed", st.closed);
+      dial.querySelector(".progress-ring").setAttribute("stroke-dashoffset", String(100 - frac * 100));
+    }
 
     // Week strip: Monday 00:00 UTC to next Monday
     const d = new Date(now * 1000);
@@ -137,7 +153,57 @@
     }
   }
 
+  // Ticker tape of measured pool-weekends (duplicated so the loop is seamless).
+  function renderTape() {
+    const host = document.getElementById("tape");
+    const data = window.BELLGUARD_FINDINGS;
+    if (!host || !data) return;
+    const rows = data.rows.filter((r) => r.swaps > 0).slice().sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 24);
+    const item = (r) => {
+      const up = r.gap >= 0;
+      return "<span class='tape-item'><b>" + r.pool + "</b><span class='d'>" + r.date.slice(5) + "</span>" +
+        "<span class='" + (up ? "gain" : "loss") + "'>" + (up ? "▲ +" : "▼ ") + r.gap.toFixed(2) + "%</span>" +
+        "<span class='d'>LP</span><span class='" + (r.markout < 0 ? "loss" : "gain") + "'>" +
+        (r.markout < 0 ? "-$" : "+$") + Math.abs(r.markout).toLocaleString("en-US") + "</span></span>";
+    };
+    const html = rows.map(item).join("");
+    host.innerHTML = html + html;
+    host.children.length && [...host.children].slice(rows.length).forEach((n) => n.setAttribute("aria-hidden", "true"));
+  }
+
+  // Contract cards with copy buttons (landing page only).
+  function renderContracts() {
+    const host = document.getElementById("contract-list");
+    const cfg = window.BELLGUARD_CONFIG;
+    if (!host || !cfg) return;
+    const d = cfg.chains[4663] && cfg.chains[4663].deployment;
+    if (!d) return;
+    const list = [
+      ["Bellguard hook", d.hook], ["Cover vault (bgUSDG)", d.vault],
+      ["Claims", d.claims], ["Market calendar", d.calendar],
+    ];
+    for (const p of d.pools || []) list.push([p.symbol + " stock token", p.stock]);
+    host.innerHTML = "";
+    for (const [name, addr] of list) {
+      const card = document.createElement("div");
+      card.className = "contract";
+      card.innerHTML = "<div><span class='name'></span><code></code></div><button class='copy' type='button'>Copy</button>";
+      card.querySelector(".name").textContent = name;
+      card.querySelector("code").textContent = addr;
+      const btn = card.querySelector("button");
+      btn.setAttribute("aria-label", "Copy " + name + " address");
+      btn.addEventListener("click", async () => {
+        try { await navigator.clipboard.writeText(addr); btn.textContent = "Copied"; }
+        catch { btn.textContent = "Select it"; }
+        setTimeout(() => { btn.textContent = "Copy"; }, 1500);
+      });
+      host.appendChild(card);
+    }
+  }
+
   renderClock();
   renderFindings();
+  renderTape();
+  renderContracts();
   setInterval(renderClock, 1000);
 })();

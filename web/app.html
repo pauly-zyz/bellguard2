@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Bellguard App</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#090e18">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 4c-5 0-8 4-8 9v6l-3 4h22l-3-4v-6c0-5-3-9-8-9z' fill='%23e2b052'/%3E%3Ccircle cx='16' cy='26.5' r='2.4' fill='%23e2b052'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,600;0,6..96,700;1,6..96,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
@@ -15,7 +17,7 @@
 <header class="topbar">
   <div class="wrap">
     <a class="brand" href="index.html" aria-label="Bellguard home">
-      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4c-5 0-8 4-8 9v6l-3 4h22l-3-4v-6c0-5-3-9-8-9z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="26.5" r="2.4" fill="currentColor"/><path d="M11 13h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="bell" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4c-5 0-8 4-8 9v6l-3 4h22l-3-4v-6c0-5-3-9-8-9z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="26.5" r="2.4" fill="currentColor"/><path d="M11 13h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       Bellguard
     </a>
     <div class="row" style="align-items:center">
@@ -38,6 +40,13 @@
 </div>
 
 <main class="wrap">
+  <div class="app-hero">
+    <div>
+      <p class="eyebrow">Bellguard app</p>
+      <h1>Cover for the closed market</h1>
+    </div>
+    <p class="muted" style="max-width:46ch">Provide liquidity, underwrite the vault, claim and settle. Every action is a transaction you sign in your own wallet.</p>
+  </div>
   <div class="app-grid">
     <div class="wide banner dismissible" id="mainnet-warning" hidden>
       <p><strong>Live on Robinhood Chain mainnet, not audited.</strong> These contracts have not had a security review. Deposits and positions can be lost to a bug. Only use amounts you can afford to lose. Contracts: <a href="https://github.com/pauly-zyz/bellguard2/blob/main/contracts/deployments/4663.json">addresses</a>.</p>
@@ -49,36 +58,43 @@
     <p class="log wide" id="w-log"></p>
 
     <section class="panel wide" id="admin" aria-labelledby="a-h" hidden>
-      <h2 id="a-h" style="font-size:var(--step-2)">Admin</h2>
-      <p style="color:var(--muted)">This wallet owns, or is about to own, the Bellguard contracts. Ownership moves in two steps: the current owner proposes you, then you accept from this wallet.</p>
+      <div class="panel-title"><span class="icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg></span><h2 id="a-h">Admin</h2></div>
+      <p class="muted">This wallet owns, or is about to own, the Bellguard contracts. Ownership moves in two steps: the current owner proposes you, then you accept from this wallet.</p>
       <dl class="kv" id="admin-list"></dl>
       <div class="row"><button class="btn" id="accept" type="button" hidden>Accept ownership</button></div>
       <p class="log" id="a-log"></p>
     </section>
 
-    <section class="panel wide" id="clock" aria-labelledby="mk-h">
-      <div class="row" style="justify-content:space-between;align-items:center">
-        <h2 id="mk-h" style="font-size:var(--step-2)">Market</h2>
+    <section class="panel wide market" id="clock" aria-labelledby="mk-h">
+      <div class="panel-head">
+        <h2 id="mk-h">Market</h2>
         <div class="row" style="align-items:center">
           <select id="pool-select" aria-label="Pool"><option>Example pool</option></select>
           <span class="pill open">Market open</span>
         </div>
       </div>
-      <div class="countdown">--</div>
-      <p class="sub">Loading calendar…</p>
-      <div class="week" aria-label="This week's market hours, in UTC">
-        <div class="track"><div class="now"></div></div>
-        <div class="days"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+      <div class="market-body">
+        <div class="dial" aria-hidden="true">
+          <svg viewBox="0 0 120 120"><circle class="track-ring" cx="60" cy="60" r="52"/><circle class="progress-ring" cx="60" cy="60" r="52" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/></svg>
+          <div class="center"><div><span class="label" data-dial-label>Until close</span><div class="countdown">--</div><span class="label" data-premium></span></div></div>
+        </div>
+        <div class="market-info">
+          <p class="sub">Loading calendar…</p>
+          <div class="week" aria-label="This week's market hours, in UTC">
+            <div class="track"><div class="now"></div></div>
+            <div class="days"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          </div>
+          <dl class="kv">
+            <dt>On-chain calendar</dt><dd id="m-state">–</dd>
+            <dt>Premium on swaps now <span class="example-tag">Example</span></dt><dd id="m-surcharge">–</dd>
+          </dl>
+        </div>
       </div>
-      <dl class="kv">
-        <dt>On-chain calendar</dt><dd id="m-state">–</dd>
-        <dt>Premium on swaps now <span class="example-tag">Example</span></dt><dd id="m-surcharge">–</dd>
-      </dl>
     </section>
 
     <section class="panel wide" id="liquidity" aria-labelledby="lp-h" hidden>
-      <h2 id="lp-h" style="font-size:var(--step-2)">Provide liquidity</h2>
-      <p style="color:var(--muted)">Add USDG and the stock token to the selected Bellguard pool on Uniswap v4. You receive a position NFT that is covered automatically. Wide ranges are safer: a claim needs your range to cover every price traded during the closed window.</p>
+      <div class="panel-title"><span class="icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span><h2 id="lp-h">Provide liquidity</h2></div>
+      <p class="muted">Add USDG and the stock token to the selected Bellguard pool on Uniswap v4. You receive a position NFT that is covered automatically. Wide ranges are safer: a claim needs your range to cover every price traded during the closed window.</p>
       <dl class="kv">
         <dt>Price</dt><dd id="lp-price">–</dd>
         <dt>You also need</dt><dd id="lp-need">–</dd>
@@ -104,8 +120,8 @@
     </section>
 
     <section class="panel" aria-labelledby="v-h">
-      <h2 id="v-h" style="font-size:var(--step-2)">Underwrite</h2>
-      <p style="color:var(--muted)">Deposit USDG into the cover vault and earn closed-market premiums.</p>
+      <div class="panel-title"><span class="icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/><path d="M8 6V4h8v2"/></svg></span><h2 id="v-h">Underwrite</h2></div>
+      <p class="muted">Deposit USDG into the cover vault and earn closed-market premiums.</p>
       <dl class="kv">
         <dt>Vault assets <span class="example-tag">Example</span></dt><dd id="v-assets">–</dd>
         <dt>Value per share</dt><dd id="v-price">–</dd>
@@ -124,8 +140,8 @@
     </section>
 
     <section class="panel" aria-labelledby="c-h">
-      <h2 id="c-h" style="font-size:var(--step-2)">Claim cover</h2>
-      <p style="color:var(--muted)">For a liquidity position that stayed unchanged through a closed window. For a Uniswap position NFT, the owner is the PositionManager and the salt is the token ID.</p>
+      <div class="panel-title"><span class="icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg></span><h2 id="c-h">Claim cover</h2></div>
+      <p class="muted">For a liquidity position that stayed unchanged through a closed window. For a Uniswap position NFT, the owner is the PositionManager and the salt is the token ID.</p>
       <div class="row">
         <div class="field"><label for="c-window">Window #</label><input id="c-window" inputmode="numeric" value="0"></div>
         <div class="field"><label for="c-salt">Salt / NFT ID</label><input id="c-salt" inputmode="numeric" value="0"></div>
@@ -143,8 +159,8 @@
     </section>
 
     <section class="panel wide" aria-labelledby="s-h">
-      <h2 id="s-h" style="font-size:var(--step-2)">Settle and pay out</h2>
-      <p style="color:var(--muted)">Anyone can settle a window during the first two hours of its settlement slot, starting one hour after reopen. Claims are paid after the claim deadline, pro rata if a window's claims exceed 20% of the vault.</p>
+      <div class="panel-title"><span class="icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0-6 6v4l-2 3h16l-2-3V9a6 6 0 0 0-6-6z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span><h2 id="s-h">Settle and pay out</h2></div>
+      <p class="muted">Anyone can settle a window during the first two hours of its settlement slot, starting one hour after reopen. Claims are paid after the claim deadline, pro rata if a window's claims exceed 20% of the vault.</p>
       <div class="row">
         <div class="field"><label for="s-window">Window #</label><input id="s-window" inputmode="numeric" value="0"></div>
         <button class="btn ghost" id="settle" type="button" data-needs-deploy>Settle window</button>
