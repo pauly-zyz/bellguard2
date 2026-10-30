@@ -1,0 +1,17 @@
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+
+# Python
+__pycache__/
+*.pyc
+research/.cache/
+research/pools.json
+research/results.csv
+research/report.md
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
