@@ -94,6 +94,13 @@ def cmd_scan(args: argparse.Namespace) -> None:
     data = json.loads(Path(args.pools).read_text())
     pools = [Pool.from_dict({k: v for k, v in d.items()
                              if k in Pool.__dataclass_fields__}) for d in data["pools"]]
+    if args.pool_ids:
+        want_ids = [s.strip().lower() for s in args.pool_ids.split(",")]
+        by_id = {p.pool_id: p for p in pools}
+        missing = [i for i in want_ids if i not in by_id]
+        if missing:
+            sys.exit(f"Unknown pool ids (run discover first): {', '.join(missing)}")
+        pools = [by_id[i] for i in want_ids]
     if args.only:
         want = {s.strip().upper() for s in args.only.split(",")}
         pools = [p for p in pools if p.stock_symbol.upper() in want]
@@ -170,6 +177,7 @@ def main(argv: list[str] | None = None) -> None:
     s.add_argument("--since", default=MAINNET_LAUNCH)
     s.add_argument("--until")
     s.add_argument("--only", help="comma-separated stock symbols, e.g. TSLA,NVDA")
+    s.add_argument("--pool-ids", help="comma-separated pool ids/addresses from pools.json")
     s.add_argument("--top", type=int, default=10, help="max pools (by current notional)")
     s.add_argument("--min-notional", type=float, default=0.0)
     s.add_argument("--settle", type=int, default=60, help="minutes after reopen for p_reopen")

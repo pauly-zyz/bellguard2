@@ -13,8 +13,7 @@ class BlockClock:
         self.rpc = rpc
         self.cache = cache
         self.first = first_block
-        self.latest = rpc.block_number()
-        self.latest_ts = rpc.block_timestamp(self.latest)
+        self.latest, self.latest_ts = rpc.latest_block()
         self._ts: dict[int, int] = {self.latest: self.latest_ts}
         self._at: dict[int, int] = {}
 

@@ -108,8 +108,19 @@ class Rpc:
         return int(self.call("eth_blockNumber", []), 16)
 
     def block_timestamp(self, number: int) -> int:
-        block = self.call("eth_getBlockByNumber", [hex(number), False])
-        return int(block["timestamp"], 16)
+        # Load-balanced nodes can briefly return null for a block another node
+        # just reported as the head, so retry a few times.
+        for attempt in range(5):
+            block = self.call("eth_getBlockByNumber", [hex(number), False])
+            if block is not None:
+                return int(block["timestamp"], 16)
+            time.sleep(1 + attempt)
+        raise RuntimeError(f"block {number} not available")
+
+    def latest_block(self) -> tuple[int, int]:
+        """(number, timestamp) of the head block, read in one call."""
+        block = self.call("eth_getBlockByNumber", ["latest", False])
+        return int(block["number"], 16), int(block["timestamp"], 16)
 
     def eth_call(self, to: str, data: str, block: int | str = "latest") -> str:
         tag = hex(block) if isinstance(block, int) else block
