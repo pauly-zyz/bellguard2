@@ -31,6 +31,11 @@ const ABI = {
   hook: parseAbi([
     "function currentSurchargeBps((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key) view returns (uint256)",
   ]),
+  owned: parseAbi([
+    "function owner() view returns (address)",
+    "function pendingOwner() view returns (address)",
+    "function acceptOwnership()",
+  ]),
   claims: parseAbi([
     "function settle((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key, uint256 windowIndex)",
     "function quoteClaim((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key, uint256 windowIndex, (address owner,int24 tickLower,int24 tickUpper,bytes32 salt) p) view returns (uint256)",
@@ -125,6 +130,46 @@ async function refresh() {
   }
 }
 
+const ADMIN_CONTRACTS = [["calendar", "Market calendar"], ["vault", "Cover vault"], ["hook", "Bellguard hook"], ["claims", "Claims"]];
+
+async function refreshAdmin() {
+  const d = dep();
+  const panel = $("admin");
+  if (!d || !account) { panel.hidden = true; return; }
+  const c = client();
+  const rows = await Promise.all(ADMIN_CONTRACTS.map(async ([k, label]) => {
+    const [owner, pending] = await Promise.all([
+      c.readContract({ address: d[k], abi: ABI.owned, functionName: "owner" }),
+      c.readContract({ address: d[k], abi: ABI.owned, functionName: "pendingOwner" }),
+    ]);
+    return { k, label, owner, pending };
+  }));
+  const me = account.toLowerCase();
+  const relevant = rows.some((r) => r.owner.toLowerCase() === me || r.pending.toLowerCase() === me);
+  panel.hidden = !relevant;
+  if (!relevant) return;
+  $("admin-list").innerHTML = rows.map((r) => {
+    const state = r.owner.toLowerCase() === me ? "You own it"
+      : r.pending.toLowerCase() === me ? "Waiting for you to accept" : "Owned by " + r.owner.slice(0, 8) + "…";
+    return "<dt>" + r.label + "</dt><dd>" + state + "</dd>";
+  }).join("");
+  const pendingForMe = rows.filter((r) => r.pending.toLowerCase() === me);
+  $("accept").hidden = pendingForMe.length === 0;
+  $("accept").dataset.keys = pendingForMe.map((r) => r.k).join(",");
+}
+
+async function acceptAll() {
+  const d = dep();
+  const keys = ($("accept").dataset.keys || "").split(",").filter(Boolean);
+  try {
+    for (const k of keys) {
+      await send("a-log", "Accept ownership of " + k, { address: d[k], abi: ABI.owned, functionName: "acceptOwnership" });
+    }
+    log("a-log", "Done. You now own " + keys.length + " contract" + (keys.length === 1 ? "" : "s") + ".");
+    refreshAdmin();
+  } catch (e) { log("a-log", e.shortMessage || e.message, true); }
+}
+
 async function connect() {
   if (!window.ethereum) {
     log("w-log", "No browser wallet found. Install one (for example MetaMask) and reload.", true);
@@ -141,6 +186,7 @@ async function connect() {
     $("connect").textContent = account.slice(0, 6) + "…" + account.slice(-4);
     log("w-log", "Connected to " + CFG.chains[chainId].name + ".");
     await refresh();
+    await refreshAdmin().catch((e) => log("a-log", "Couldn't read owners: " + (e.shortMessage || e.message), true));
   } catch (e) {
     log("w-log", "Wallet connection failed: " + (e.shortMessage || e.message), true);
   }
@@ -240,5 +286,6 @@ $("quote").addEventListener("click", quote);
 $("register").addEventListener("click", register);
 $("settle").addEventListener("click", settle);
 $("pay").addEventListener("click", payout);
+$("accept").addEventListener("click", acceptAll);
 refresh();
 setInterval(refresh, 30000);

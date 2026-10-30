@@ -65,8 +65,10 @@ Deployed 2026-10-30 by a temporary deploy key `0x44cb17C50b79537c7db2E64FC1163a4
 surcharge, 1% deductible, 5% cap, 5% of vault per window, 37 closed windows to June 2027,
 COIN and MSTR registered with Chainlink proxies.
 
-- [ ] **Hand ownership to the project wallet or multisig** (`transferOwnership` on calendar,
-      vault, hook and claims, then `acceptOwnership` from the new owner; `setTreasury` on the hook)
+- [x] Treasury set to the project wallet `0x4b08C1DbE28e4e260037299e8cb4B34c7FBe2195`
+- [x] Ownership of calendar, vault, hook and claims proposed to the project wallet
+- [ ] **Project wallet accepts ownership** (app → connect wallet → Admin → Accept ownership)
+- [ ] Later: move ownership from the project wallet to a multisig
 
 - [x] Deploy with `script/Deploy.s.sol`
 - [ ] Verify source on the explorer

@@ -38,6 +38,14 @@
     </div>
     <p class="log wide" id="w-log"></p>
 
+    <section class="panel wide" id="admin" aria-labelledby="a-h" hidden>
+      <h2 id="a-h" style="font-size:var(--step-2)">Admin</h2>
+      <p style="color:var(--muted)">This wallet owns, or is about to own, the Bellguard contracts. Ownership moves in two steps: the current owner proposes you, then you accept from this wallet.</p>
+      <dl class="kv" id="admin-list"></dl>
+      <div class="row"><button class="btn" id="accept" type="button" hidden>Accept ownership</button></div>
+      <p class="log" id="a-log"></p>
+    </section>
+
     <section class="panel wide" id="clock" aria-labelledby="mk-h">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h2 id="mk-h" style="font-size:var(--step-2)">Market</h2>
