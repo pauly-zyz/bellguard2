@@ -179,7 +179,9 @@ async function quote() {
     const amount = await client().readContract({
       address: d.claims, abi: ABI.claims, functionName: "quoteClaim", args: [d.pool, BigInt($("c-window").value), positionInput()],
     });
-    log("c-log", amount > 0n ? "This position can claim " + usd(amount) + " (before any pro rata)." : "Nothing to claim for this window.");
+    log("c-log", amount > 0n
+      ? "This position can claim " + usd(amount) + " (before any pro rata)."
+      : "Nothing to claim for this window. Either LPs didn't lose money, the loss is below the deductible, or the position changed during the window.");
   } catch (e) { log("c-log", e.shortMessage || e.message, true); }
 }
 
