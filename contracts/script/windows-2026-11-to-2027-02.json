@@ -1,0 +1,97 @@
+[
+  {
+    "end": 1793581200,
+    "label": "weekend",
+    "start": 1793408400
+  },
+  {
+    "end": 1794186000,
+    "label": "weekend",
+    "start": 1794013200
+  },
+  {
+    "end": 1794790800,
+    "label": "weekend",
+    "start": 1794618000
+  },
+  {
+    "end": 1795395600,
+    "label": "weekend",
+    "start": 1795222800
+  },
+  {
+    "end": 1795741200,
+    "label": "Thanksgiving Day",
+    "start": 1795654800
+  },
+  {
+    "end": 1796000400,
+    "label": "weekend",
+    "start": 1795827600
+  },
+  {
+    "end": 1796605200,
+    "label": "weekend",
+    "start": 1796432400
+  },
+  {
+    "end": 1797210000,
+    "label": "weekend",
+    "start": 1797037200
+  },
+  {
+    "end": 1797814800,
+    "label": "weekend",
+    "start": 1797642000
+  },
+  {
+    "end": 1798419600,
+    "label": "Christmas Day + weekend",
+    "start": 1798160400
+  },
+  {
+    "end": 1799024400,
+    "label": "New Year's Day + weekend",
+    "start": 1798765200
+  },
+  {
+    "end": 1799629200,
+    "label": "weekend",
+    "start": 1799456400
+  },
+  {
+    "end": 1800320400,
+    "label": "weekend + Martin Luther King Jr. Day",
+    "start": 1800061200
+  },
+  {
+    "end": 1800838800,
+    "label": "weekend",
+    "start": 1800666000
+  },
+  {
+    "end": 1801443600,
+    "label": "weekend",
+    "start": 1801270800
+  },
+  {
+    "end": 1802048400,
+    "label": "weekend",
+    "start": 1801875600
+  },
+  {
+    "end": 1802739600,
+    "label": "weekend + Washington's Birthday",
+    "start": 1802480400
+  },
+  {
+    "end": 1803258000,
+    "label": "weekend",
+    "start": 1803085200
+  },
+  {
+    "end": 1803862800,
+    "label": "weekend",
+    "start": 1803690000
+  }
+]

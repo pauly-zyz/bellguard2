@@ -9,6 +9,7 @@ evm_version = "cancun"
 optimizer = true
 optimizer_runs = 10_000
 bytecode_hash = "none"
+fs_permissions = [{ access = "read", path = "./script" }, { access = "read-write", path = "./deployments" }]
 remappings = [
   "forge-std/=lib/forge-std/src/",
   "v4-core/=lib/v4-core/",

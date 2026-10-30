@@ -18,7 +18,8 @@ USER_AGENT = "bellguard-gapscan/0.1"
 
 # Public-endpoint limits observed on 2026-10-30.
 MAX_LOG_RANGE = 10_000_000  # blocks per eth_getLogs
-MAX_BATCH = 50
+MAX_BATCH = 25
+BATCH_ITEM_INTERVAL = 0.04  # extra spacing per call inside a batch (the node rate-limits per call)
 
 
 class RpcError(RuntimeError):
@@ -30,7 +31,7 @@ class RpcError(RuntimeError):
 
 class Rpc:
     def __init__(self, url: str = DEFAULT_RPC, *, min_interval: float = 0.15,
-                 max_retries: int = 6, timeout: float = 60.0, verbose: bool = False):
+                 max_retries: int = 10, timeout: float = 60.0, verbose: bool = False):
         self.url = url
         self.min_interval = min_interval
         self.max_retries = max_retries
@@ -43,9 +44,11 @@ class Rpc:
     # -- transport -----------------------------------------------------------
     def _post(self, payload: Any) -> Any:
         body = json.dumps(payload).encode()
-        delay = 1.0
+        weight = len(payload) if isinstance(payload, list) else 1
+        spacing = self.min_interval + BATCH_ITEM_INTERVAL * (weight - 1)
+        delay = 2.0
         for attempt in range(self.max_retries + 1):
-            wait = self.min_interval - (time.monotonic() - self._last)
+            wait = spacing - (time.monotonic() - self._last)
             if wait > 0:
                 time.sleep(wait)
             self._last = time.monotonic()

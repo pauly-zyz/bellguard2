@@ -86,7 +86,14 @@ def cmd_discover(args: argparse.Namespace) -> None:
 
 def cmd_windows(args: argparse.Namespace) -> None:
     until = _date(args.until) if args.until else datetime.now(timezone.utc)
-    for w in closed_windows(_date(args.since), until):
+    windows = closed_windows(_date(args.since), until)
+    if args.json:
+        # Field order matters for Foundry's abi.decode of JSON objects (alphabetical keys).
+        rows = [{"end": w.end_ts, "label": w.label, "start": w.start_ts} for w in windows]
+        Path(args.json).write_text(json.dumps(rows, indent=2))
+        print(f"Wrote {len(rows)} windows -> {args.json}")
+        return
+    for w in windows:
         print(f"{w.start:%Y-%m-%d %H:%M} -> {w.end:%Y-%m-%d %H:%M} UTC  "
               f"{w.hours:5.1f}h  {w.label}")
 
@@ -124,9 +131,9 @@ def cmd_scan(args: argparse.Namespace) -> None:
     if not args.no_chainlink and windows:
         lo = clock.block_at(windows[0].start_ts - 4 * 86400)
         print(f"Loading Chainlink updates from block {lo:,} ...")
-        chainlink = ChainlinkPrices(rpc, cache, lo, clock.latest)
-        covered = sorted({p.stock_symbol for p in pools} & set(chainlink.symbols()))
-        print(f"  {len(chainlink.symbols())} Robinhood feeds found; covering {', '.join(covered) or 'none'}")
+        chainlink = ChainlinkPrices(rpc, cache, lo, clock.latest, symbols={p.stock_symbol for p in pools})
+        covered = sorted({p.stock_symbol for p in pools} & set(chainlink.feeds))
+        print(f"  {len(chainlink.feeds)} Robinhood feeds found; covering {', '.join(covered) or 'none'}")
     print(f"Scanning {len(pools)} pools x {len(windows)} closed windows ...")
 
     rows = []
@@ -180,6 +187,7 @@ def main(argv: list[str] | None = None) -> None:
     w = sub.add_parser("windows", help="list closed-market windows")
     w.add_argument("--since", default=MAINNET_LAUNCH)
     w.add_argument("--until")
+    w.add_argument("--json", help="write windows as JSON for contracts/script PublishCalendar")
     w.set_defaults(fn=cmd_windows)
 
     s = sub.add_parser("scan", help="measure LP markout per closed window")

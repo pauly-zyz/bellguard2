@@ -40,42 +40,65 @@ class Update:
 
 
 class ChainlinkPrices:
-    def __init__(self, rpc: Rpc, cache: Cache, from_block: int, to_block: int):
+    """Price history for Robinhood stock feeds.
+
+    Two steps keep this cheap on the public RPC: find feed addresses from a
+    recent stretch of AnswerUpdated logs (every live feed updates within a few
+    days), then fetch full history only for the feeds of the symbols needed.
+    """
+
+    def __init__(self, rpc: Rpc, cache: Cache, from_block: int, to_block: int,
+                 symbols: set[str] | None = None, discovery_blocks: int = 8_000_000):
         self.rpc, self.cache = rpc, cache
         self.from_block, self.to_block = from_block, to_block
         self._series: dict[str, list[Update]] = {}
         self._blocks: dict[str, list[tuple[int, int]]] = {}
         self.feeds: dict[str, list[str]] = {}
-        self._load()
+        self._discover(max(from_block, to_block - discovery_blocks))
+        self._load(symbols)
 
-    def _load(self) -> None:
-        def fetch() -> list[list]:
-            logs = self.rpc.get_logs(None, [TOPIC_ANSWER_UPDATED], self.from_block, self.to_block)
-            # [address, block, logIndex, answer (signed int), updatedAt]
-            return [[log["address"].lower(), int(log["blockNumber"], 16), int(log["logIndex"], 16),
-                     to_signed(int(log["topics"][1], 16)), words(log["data"])[0]]
-                    for log in logs if len(log["topics"]) > 1]
+    def _discover(self, lo: int) -> None:
+        def fetch() -> list[str]:
+            logs = self.rpc.get_logs(None, [TOPIC_ANSWER_UPDATED], lo, self.to_block)
+            return sorted({log["address"].lower() for log in logs})
 
-        key = f"{self.from_block}:{self.to_block}"
-        rows = self.cache.get_or_set("chainlink_logs", key, fetch)
-        by_addr: dict[str, list[list]] = {}
-        for row in rows:
-            by_addr.setdefault(row[0], []).append(row)
-
-        addrs = sorted(by_addr)
+        addrs = self.cache.get_or_set("chainlink_emitters", f"{lo // 100_000}", fetch)
         meta = self.cache.get_or_set("chainlink_meta", ",".join(addrs), lambda: self._meta(addrs))
+        self._decimals: dict[str, int] = {}
         for addr in addrs:
             desc, decimals = meta.get(addr, (None, None))
             sym = feed_symbol(desc) if desc else None
             if sym is None or decimals is None:
                 continue
             self.feeds.setdefault(sym, []).append(addr)
-            series = self._series.setdefault(sym, [])
-            for _, block, idx, answer, updated_at in by_addr[addr]:
-                series.append(Update(block, idx, answer / 10 ** decimals, updated_at))
+            self._decimals[addr] = decimals
+
+    def _load(self, symbols: set[str] | None) -> None:
+        wanted = sorted(a for sym, addrs in self.feeds.items()
+                        if symbols is None or sym in symbols for a in addrs)
+        if not wanted:
+            return
+
+        def fetch() -> list[list]:
+            logs = self.rpc.get_logs(wanted, [TOPIC_ANSWER_UPDATED], self.from_block, self.to_block)
+            # [address, block, logIndex, answer (signed int), updatedAt]
+            return [[log["address"].lower(), int(log["blockNumber"], 16), int(log["logIndex"], 16),
+                     to_signed(int(log["topics"][1], 16)), words(log["data"])[0]]
+                    for log in logs if len(log["topics"]) > 1]
+
+        key = f"{self.from_block}:{self.to_block}:{','.join(wanted)}"
+        rows = self.cache.get_or_set("chainlink_logs", key, fetch)
+        symbol_of = {a: sym for sym, addrs in self.feeds.items() for a in addrs}
+        for addr, block, idx, answer, updated_at in rows:
+            sym = symbol_of[addr]
+            self._series.setdefault(sym, []).append(
+                Update(block, idx, answer / 10 ** self._decimals[addr], updated_at))
         for sym, series in self._series.items():
             series.sort(key=lambda u: (u.block, u.log_index))
             self._blocks[sym] = [(u.block, u.log_index) for u in series]
+
+    def has_feed(self, symbol: str) -> bool:
+        return symbol in self.feeds
 
     def _meta(self, addrs: list[str]) -> dict[str, tuple[str | None, int | None]]:
         desc = self.rpc.batch([("eth_call", [{"to": a, "data": call_data("description()")}, "latest"])
