@@ -20,8 +20,8 @@ import {HookMiner} from "./HookMiner.sol";
 /// Optional env (defaults in brackets):
 ///   POOL_MANAGER [Robinhood Chain v4 PoolManager], CALENDAR_NOTICE [3600],
 ///   LOCK_AFTER_REOPEN [345600 = 4 days], SETTLE_DELAY [3600], SETTLE_SLOT [7200],
-///   CLAIM_PERIOD [172800 = 2 days], MAX_PRICE_AGE [3600], CLOSED_BPS [30],
-///   DEDUCTIBLE_BPS [25], CAP_BPS [500], MAX_WINDOW_BPS [2000]
+///   CLAIM_PERIOD [172800 = 2 days], MAX_PRICE_AGE [3600], CLOSED_BPS [10],
+///   DEDUCTIBLE_BPS [100], CAP_BPS [500], MAX_WINDOW_BPS [2000]
 ///
 /// The calendar starts owned by the deployer so PublishCalendar can run next;
 /// hand it to OWNER afterwards (two-step: OWNER must call acceptOwnership).
@@ -71,7 +71,7 @@ abstract contract DeployBase is Script {
         returns (BellguardHook hook)
     {
         IPoolManager manager = IPoolManager(vm.envOr("POOL_MANAGER", DEFAULT_POOL_MANAGER));
-        uint16 closedBps = uint16(vm.envOr("CLOSED_BPS", uint256(30)));
+        uint16 closedBps = uint16(vm.envOr("CLOSED_BPS", uint256(10)));
         bytes memory args =
             abi.encode(manager, d.calendar, Currency.wrap(usdg), address(d.vault), treasury, closedBps, owner);
         (address hookAddr, bytes32 salt) =
@@ -87,7 +87,7 @@ abstract contract DeployBase is Script {
         returns (BellguardClaims)
     {
         BellguardClaims.Terms memory terms = BellguardClaims.Terms({
-            deductibleBps: uint16(vm.envOr("DEDUCTIBLE_BPS", uint256(25))),
+            deductibleBps: uint16(vm.envOr("DEDUCTIBLE_BPS", uint256(100))),
             capBps: uint16(vm.envOr("CAP_BPS", uint256(500))),
             maxWindowBps: uint16(vm.envOr("MAX_WINDOW_BPS", uint256(2000)))
         });

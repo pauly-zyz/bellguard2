@@ -57,7 +57,7 @@ contract DeployTest is Test, Deployers {
         assertEq(d.hook.vault(), address(d.vault));
         assertEq(d.hook.treasury(), treasury);
         assertEq(d.hook.owner(), owner);
-        assertEq(d.hook.closedBps(), 30);
+        assertEq(d.hook.closedBps(), 10);
 
         assertEq(d.vault.claims(), address(d.claims));
         assertEq(d.vault.pendingOwner(), owner); // two-step handover

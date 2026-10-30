@@ -49,7 +49,7 @@ export USDG=0x5fc5360d0400a0fd4f2af552add042d716f1d168
 export POSITION_MANAGER=0x58daec3116aae6d93017baaea7749052e8a04fa7
 export OWNER=<multisig>
 export TREASURY=<multisig or treasury contract>
-# optional: CLOSED_BPS=30 DEDUCTIBLE_BPS=25 CAP_BPS=500 MAX_WINDOW_BPS=2000
+# optional: CLOSED_BPS=10 DEDUCTIBLE_BPS=100 CAP_BPS=500 MAX_WINDOW_BPS=2000
 #           SETTLE_DELAY=3600 SETTLE_SLOT=7200 CLAIM_PERIOD=172800
 #           LOCK_AFTER_REOPEN=345600 MAX_PRICE_AGE=3600 CALENDAR_NOTICE=3600
 
@@ -81,7 +81,7 @@ Then, in order:
 
 | Parameter | Default | Constraint |
 |---|---|---|
-| `CLOSED_BPS` | 30 (0.30%) | ≤ 300, hard-coded in the hook |
+| `CLOSED_BPS` | 10 (0.10%) | ≤ 300, hard-coded in the hook |
 | `LOCK_AFTER_REOPEN` | 4 days | ≥ `SETTLE_DELAY + CLAIM_PERIOD` (enforced by BellguardClaims) |
 | `MAX_PRICE_AGE` | 1 hour | Chainlink stock feeds have a heartbeat; keep it above that |
 | `MAX_WINDOW_BPS` | 2000 (20%) | Share of the vault that one closed window can pay out |

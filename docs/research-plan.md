@@ -10,13 +10,15 @@ price, before writing the hook and vault.
 - [x] Closed-window calendar: weekends (Robinhood's CET window), US holidays, DST
 - [x] Per-window LP markout from Swap logs (no archive node needed)
 - [x] First premium estimate with deductible and cap (`gapscan report`)
+- [x] First results: `docs/findings-2026-10.md` (5 pools, 14 windows, pool-referenced)
+- [x] Chainlink feed discovery on-chain and AnswerUpdated history (`gapscan/chainlink.py`)
+- [x] Range-width view of losses (full range, ±20%, ±5%)
 
 ## Next
 
-1. **Chainlink reference prices.** Get feed addresses from Chainlink's
-   reference-data-directory (`feeds-robinhood-mainnet.json`). Read
-   `AnswerUpdated` logs from each feed's aggregator. Use the first update
-   after reopen as `p_reopen`. Compare with the pool-based price.
+1. **Chainlink-referenced run.** The code is in place (`scan` without
+   `--no-chainlink`). Run it on a paid RPC; the public endpoint rate-limits the
+   feed-history download too heavily to finish in reasonable time.
 2. **Longer history and more pools.** Run on a paid RPC across all 202
    pools. Re-run weekly and track how the distribution changes.
 3. **Position-level loss.** Rebuild v3 positions from Mint/Burn events.

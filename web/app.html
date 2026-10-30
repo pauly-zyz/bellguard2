@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bellguard App</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,600;0,6..96,700;1,6..96,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="Bellguard home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4c-5 0-8 4-8 9v6l-3 4h22l-3-4v-6c0-5-3-9-8-9z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="26.5" r="2.4" fill="currentColor"/><path d="M11 13h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Bellguard
+    </a>
+    <div class="row" style="align-items:center">
+      <select id="network" aria-label="Network">
+        <option value="46630">Robinhood Chain Testnet</option>
+        <option value="4663">Robinhood Chain</option>
+      </select>
+      <button class="btn" id="connect" type="button">Connect wallet</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="app-grid">
+    <div class="wide banner" id="not-deployed">
+      Bellguard isn't deployed on <strong id="network-name">this network</strong> yet. Panels below show example figures (tagged) so you can see what they will contain. Deployment steps: <a href="https://github.com/pauly-zyz/bellguard/blob/main/docs/deploy.md">docs/deploy.md</a>.
+    </div>
+    <p class="log wide" id="w-log"></p>
+
+    <section class="panel wide" id="clock" aria-labelledby="mk-h">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2 id="mk-h" style="font-size:var(--step-2)">Market</h2>
+        <span class="pill open">Market open</span>
+      </div>
+      <div class="countdown">--</div>
+      <p class="sub">Loading calendar…</p>
+      <div class="week" aria-label="This week's market hours, in UTC">
+        <div class="track"><div class="now"></div></div>
+        <div class="days"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+      </div>
+      <dl class="kv">
+        <dt>On-chain calendar</dt><dd id="m-state">–</dd>
+        <dt>Premium on swaps now <span class="example-tag">Example</span></dt><dd id="m-surcharge">–</dd>
+      </dl>
+    </section>
+
+    <section class="panel" aria-labelledby="v-h">
+      <h2 id="v-h" style="font-size:var(--step-2)">Underwrite</h2>
+      <p style="color:var(--muted)">Deposit USDG into the cover vault and earn closed-market premiums.</p>
+      <dl class="kv">
+        <dt>Vault assets <span class="example-tag">Example</span></dt><dd id="v-assets">–</dd>
+        <dt>Value per share</dt><dd id="v-price">–</dd>
+        <dt>Withdrawals</dt><dd id="v-locked">–</dd>
+        <dt>Your position</dt><dd id="v-mine">–</dd>
+      </dl>
+      <div class="row">
+        <div class="field"><label for="dep-amount">Deposit (USDG)</label><input id="dep-amount" inputmode="decimal" placeholder="1000"></div>
+        <button class="btn" id="deposit" type="button" data-needs-deploy>Deposit</button>
+      </div>
+      <div class="row">
+        <div class="field"><label for="wd-amount">Withdraw (USDG)</label><input id="wd-amount" inputmode="decimal" placeholder="500"></div>
+        <button class="btn ghost" id="withdraw" type="button" data-needs-deploy>Withdraw</button>
+      </div>
+      <p class="log" id="v-log"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="c-h">
+      <h2 id="c-h" style="font-size:var(--step-2)">Claim cover</h2>
+      <p style="color:var(--muted)">For a liquidity position that stayed unchanged through a closed window. For a Uniswap position NFT, the owner is the PositionManager and the salt is the token ID.</p>
+      <div class="row">
+        <div class="field"><label for="c-window">Window #</label><input id="c-window" inputmode="numeric" value="0"></div>
+        <div class="field"><label for="c-salt">Salt / NFT ID</label><input id="c-salt" inputmode="numeric" value="0"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="c-lower">Tick lower</label><input id="c-lower" inputmode="numeric" value="-227280"></div>
+        <div class="field"><label for="c-upper">Tick upper</label><input id="c-upper" inputmode="numeric" value="-215280"></div>
+      </div>
+      <div class="field"><label for="c-owner">Position owner (blank = your wallet)</label><input id="c-owner" placeholder="0x…"></div>
+      <div class="row">
+        <button class="btn ghost" id="quote" type="button" data-needs-deploy>Check amount</button>
+        <button class="btn" id="register" type="button" data-needs-deploy>Register claim</button>
+      </div>
+      <p class="log" id="c-log"></p>
+    </section>
+
+    <section class="panel wide" aria-labelledby="s-h">
+      <h2 id="s-h" style="font-size:var(--step-2)">Settle and pay out</h2>
+      <p style="color:var(--muted)">Anyone can settle a window during the first two hours of its settlement slot, starting one hour after reopen. Claims are paid after the claim deadline, pro rata if a window's claims exceed 20% of the vault.</p>
+      <div class="row">
+        <div class="field"><label for="s-window">Window #</label><input id="s-window" inputmode="numeric" value="0"></div>
+        <button class="btn ghost" id="settle" type="button" data-needs-deploy>Settle window</button>
+        <div class="field" style="flex:3 1 260px"><label for="p-claim">Claim ID</label><input id="p-claim" placeholder="0x…"></div>
+        <button class="btn" id="pay" type="button" data-needs-deploy>Pay claim</button>
+      </div>
+      <p class="log" id="s-log"></p>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap"><p>Research software, not audited. Use testnet only.</p></div>
+</footer>
+
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="site.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

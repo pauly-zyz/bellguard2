@@ -56,14 +56,15 @@ batched search over block headers (`gapscan/blocks.py`).
 
 ## Limits (read before trusting numbers)
 
-- **Pool-based reference price.** `p_reopen` comes from the pool itself after
-  arbitrage resumes, not from Chainlink. Thin pools may not converge within
-  the settle time. Chainlink support is the next step (see
-  `docs/research-plan.md`).
+- **Reference price.** By default `scan` also loads Chainlink feed history
+  (found on-chain) and reports a Chainlink-referenced markout next to the
+  pool-referenced one. On the public RPC that download is slow; use
+  `--no-chainlink` for a quick pool-only run.
 - **Short history.** Mainnet launched in July 2026, so there are about 17
   windows so far.
 - **Pool-level, not position-level.** Markout is for the pool as a whole.
   Concentrated positions out of range at reopen fare differently.
-- **Notional is virtual.** For concentrated liquidity, `2·L·√P` overstates
-  real deposits, so `markout_bps` is conservative (small).
+- **Notional is full-range equivalent.** `2·L·√P` is what a full-range position
+  with the same liquidity would hold, so `markout_bps` is the full-range view.
+  The report's range-width table converts it for ±20% and ±5% positions.
 - **Holiday rule is an assumption.** See the `calendar.py` docstring.
