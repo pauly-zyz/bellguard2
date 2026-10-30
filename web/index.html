@@ -149,13 +149,14 @@
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Where things stand</p>
-        <h2>Built, tested, not yet live</h2>
+        <h2>Live on mainnet, not yet audited</h2>
       </div>
       <div class="status-list">
         <div class="status-row"><span class="badge done">Done</span><p>Contracts: v4 hook, cover vault, claims and market calendar. 62 tests against the real Uniswap v4 PoolManager.</p></div>
         <div class="status-row"><span class="badge done">Done</span><p>Testnet deployment simulated against live Robinhood Chain testnet state.</p></div>
         <div class="status-row"><span class="badge done">Done</span><p>Research tool that measures gap losses from on-chain data.</p></div>
-        <div class="status-row"><span class="badge todo">Next</span><p>Public testnet deployment and keeper for settlements.</p></div>
+        <div class="status-row"><span class="badge done">Live</span><p>Deployed on Robinhood Chain mainnet on 30 Oct 2026 with COIN/USDG and MSTR/USDG pools on Uniswap v4. <a href="https://github.com/pauly-zyz/bellguard2/blob/main/contracts/deployments/4663.json">Contract addresses</a>.</p></div>
+        <div class="status-row"><span class="badge todo">Next</span><p>Settlement keeper, first liquidity and underwriting deposits, ownership moved to a multisig.</p></div>
         <div class="status-row"><span class="badge blocked">Required</span><p>Independent security audit, legal review of the cover product, and a multisig owner before any mainnet launch.</p></div>
       </div>
     </div>
@@ -164,7 +165,7 @@
 
 <footer>
   <div class="wrap">
-    <p>Bellguard is research software. It is not audited, not an insurance product and not available on mainnet. Stock tokens are not available in the US and several other jurisdictions.</p>
+    <p>Bellguard is experimental software deployed on Robinhood Chain mainnet without a security audit. It is not an insurance product. Funds can be lost; use only amounts you can afford to lose. Stock tokens are not available in the US and several other jurisdictions.</p>
     <p>Not affiliated with Robinhood, Uniswap or Chainlink.</p>
   </div>
 </footer>

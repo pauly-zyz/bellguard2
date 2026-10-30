@@ -60,7 +60,17 @@ is what stands between the repository and a mainnet launch, in order.
 
 ## 5. Mainnet (Phase 2)
 
-- [ ] Deploy with `script/Deploy.s.sol` and verify on the explorer
-- [ ] Publish the calendar months ahead and add earnings events
-- [ ] Register two or three stocks with liquid Chainlink feeds
+Deployed 2026-10-30 by a temporary deploy key `0x44cb17C50b79537c7db2E64FC1163a4b6eC3d404`
+(owner of all contracts and treasury until handed over). Settings: 0.10% closed-market
+surcharge, 1% deductible, 5% cap, 5% of vault per window, 37 closed windows to June 2027,
+COIN and MSTR registered with Chainlink proxies.
+
+- [ ] **Hand ownership to the project wallet or multisig** (`transferOwnership` on calendar,
+      vault, hook and claims, then `acceptOwnership` from the new owner; `setTreasury` on the hook)
+
+- [x] Deploy with `script/Deploy.s.sol`
+- [ ] Verify source on the explorer
+- [x] Publish the calendar months ahead (to June 2027)
+- [ ] Add earnings events
+- [x] Register two stocks with Chainlink feeds (COIN, MSTR)
 - [ ] Low caps: small vault, low `MAX_WINDOW_BPS`, then raise gradually

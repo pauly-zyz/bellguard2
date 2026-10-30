@@ -50,6 +50,14 @@ const chainFor = (id) => defineChain({
   rpcUrls: { default: { http: [CFG.chains[id].rpc] } },
 });
 const dep = () => CFG.chains[chainId] && CFG.chains[chainId].deployment;
+// A deployment lists several pools (`pools`); the demo config has a single `pool`.
+const poolKey = () => {
+  const d = dep();
+  if (!d) return null;
+  if (!d.pools) return d.pool;
+  const i = Math.max(0, $("pool-select").selectedIndex);
+  return d.pools[i].key;
+};
 const client = () => createPublicClient({ chain: chainFor(chainId), transport: http(CFG.chains[chainId].rpc) });
 const usd = (v) => "$" + Number(formatUnits(v, 6)).toLocaleString("en-US", { maximumFractionDigits: 2 });
 
@@ -63,6 +71,13 @@ function setDeployedUi() {
   const d = dep();
   $("network-name").textContent = CFG.chains[chainId].name;
   $("not-deployed").hidden = !!d;
+  $("mainnet-warning").hidden = !(d && CFG.chains[chainId].mainnet);
+  const sel = $("pool-select");
+  const pools = d && d.pools ? d.pools : [];
+  if (sel.dataset.chain !== String(chainId)) {
+    sel.innerHTML = pools.map((p) => "<option>" + p.symbol + " / USDG</option>").join("") || "<option>Example pool</option>";
+    sel.dataset.chain = String(chainId);
+  }
   document.querySelectorAll("[data-needs-deploy]").forEach((b) => { b.disabled = !d || !account; });
   document.querySelectorAll(".example-tag").forEach((t) => { t.hidden = !!d; });
 }
@@ -85,7 +100,7 @@ async function refresh() {
     const c = client();
     const [closed, surcharge, assets, supply, locked] = await Promise.all([
       c.readContract({ address: d.calendar, abi: ABI.calendar, functionName: "isClosedNow" }),
-      c.readContract({ address: d.hook, abi: ABI.hook, functionName: "currentSurchargeBps", args: [d.pool] }),
+      c.readContract({ address: d.hook, abi: ABI.hook, functionName: "currentSurchargeBps", args: [poolKey()] }),
       c.readContract({ address: d.vault, abi: ABI.vault, functionName: "totalAssets" }),
       c.readContract({ address: d.vault, abi: ABI.vault, functionName: "totalSupply" }),
       c.readContract({ address: d.vault, abi: ABI.vault, functionName: "isLocked" }),
@@ -177,7 +192,7 @@ async function quote() {
   const d = dep();
   try {
     const amount = await client().readContract({
-      address: d.claims, abi: ABI.claims, functionName: "quoteClaim", args: [d.pool, BigInt($("c-window").value), positionInput()],
+      address: d.claims, abi: ABI.claims, functionName: "quoteClaim", args: [poolKey(), BigInt($("c-window").value), positionInput()],
     });
     log("c-log", amount > 0n
       ? "This position can claim " + usd(amount) + " (before any pro rata)."
@@ -189,7 +204,7 @@ async function register() {
   const d = dep();
   try {
     const r = await send("c-log", "Register claim", {
-      address: d.claims, abi: ABI.claims, functionName: "registerClaim", args: [d.pool, BigInt($("c-window").value), positionInput()],
+      address: d.claims, abi: ABI.claims, functionName: "registerClaim", args: [poolKey(), BigInt($("c-window").value), positionInput()],
     });
     const topic = r.logs.find((l) => l.address.toLowerCase() === d.claims.toLowerCase());
     const id = topic ? topic.topics[1] : "(see transaction)";
@@ -201,7 +216,7 @@ async function register() {
 async function settle() {
   const d = dep();
   try {
-    await send("s-log", "Settle", { address: d.claims, abi: ABI.claims, functionName: "settle", args: [d.pool, BigInt($("s-window").value)] });
+    await send("s-log", "Settle", { address: d.claims, abi: ABI.claims, functionName: "settle", args: [poolKey(), BigInt($("s-window").value)] });
     log("s-log", "Window settled.");
   } catch (e) { log("s-log", e.shortMessage || e.message, true); }
 }
@@ -215,6 +230,8 @@ async function payout() {
   } catch (e) { log("s-log", e.shortMessage || e.message, true); }
 }
 
+$("network").value = String(chainId);
+$("pool-select").addEventListener("change", refresh);
 $("network").addEventListener("change", (e) => { chainId = Number(e.target.value); account = null; $("connect").textContent = "Connect wallet"; refresh(); });
 $("connect").addEventListener("click", connect);
 $("deposit").addEventListener("click", deposit);

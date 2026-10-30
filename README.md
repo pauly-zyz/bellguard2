@@ -15,10 +15,17 @@ Premiums rise around earnings and other scheduled events.
 
 Website: **https://bellguard2.vercel.app**
 
-Status: **built and tested, contracts not deployed.** Contracts, research tool, deploy scripts and
-website are done; a testnet deployment was dry-run against live Robinhood Chain testnet
-state. Mainnet needs an audit, legal review and a multisig first
-([launch checklist](docs/launch-checklist.md)).
+Status: **live on Robinhood Chain mainnet since 2026-10-30, not audited.** Pools: COIN/USDG and
+MSTR/USDG on Uniswap v4. Addresses: [`contracts/deployments/4663.json`](contracts/deployments/4663.json).
+An audit, legal review and a multisig owner are still outstanding
+([launch checklist](docs/launch-checklist.md)). Use only amounts you can afford to lose.
+
+| Contract | Address |
+|---|---|
+| MarketCalendar | `0x8eeE13759042754C7a524030C09c7628BD580407` |
+| CoverVault (bgUSDG) | `0x4712BAc5Bfd40Fc0bAb7f4270890Bdcd9ba238a8` |
+| BellguardHook | `0x26ba8a6CA4028DF9C655072F63BC316475542ac4` |
+| BellguardClaims | `0x91d110aACf2FFc7d19F99B1D1E8529928700dDdE` |
 
 **First findings** ([full write-up](docs/findings-2026-10.md)): across 65 pool-weekends
 on the five largest stock pools (Jul to Oct 2026), LPs lost money in only 4, and none
@@ -81,5 +88,5 @@ hukum dan multisig.
 
 ## Disclaimer
 
-Research code. Not audited. Not a regulated insurance product. Do not use
-with real funds.
+Experimental software, deployed without an audit. Not a regulated insurance product.
+Funds can be lost.

@@ -20,8 +20,8 @@
     </a>
     <div class="row" style="align-items:center">
       <select id="network" aria-label="Network">
-        <option value="46630">Robinhood Chain Testnet</option>
         <option value="4663">Robinhood Chain</option>
+        <option value="46630">Robinhood Chain Testnet</option>
       </select>
       <button class="btn" id="connect" type="button">Connect wallet</button>
     </div>
@@ -30,6 +30,9 @@
 
 <main class="wrap">
   <div class="app-grid">
+    <div class="wide banner" id="mainnet-warning" hidden>
+      <strong>Live on Robinhood Chain mainnet, not audited.</strong> These contracts have not had a security review. Deposits and positions can be lost to a bug. Only use amounts you can afford to lose. Contracts: <a href="https://github.com/pauly-zyz/bellguard2/blob/main/contracts/deployments/4663.json">addresses</a>.
+    </div>
     <div class="wide banner" id="not-deployed">
       Bellguard isn't deployed on <strong id="network-name">this network</strong> yet. Panels below show example figures (tagged) so you can see what they will contain. Deployment steps: <a href="https://github.com/pauly-zyz/bellguard2/blob/main/docs/deploy.md">docs/deploy.md</a>.
     </div>
@@ -38,7 +41,10 @@
     <section class="panel wide" id="clock" aria-labelledby="mk-h">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h2 id="mk-h" style="font-size:var(--step-2)">Market</h2>
-        <span class="pill open">Market open</span>
+        <div class="row" style="align-items:center">
+          <select id="pool-select" aria-label="Pool"><option>Example pool</option></select>
+          <span class="pill open">Market open</span>
+        </div>
       </div>
       <div class="countdown">--</div>
       <p class="sub">Loading calendar…</p>
