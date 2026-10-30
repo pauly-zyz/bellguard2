@@ -28,6 +28,14 @@
   </div>
 </header>
 
+<div class="picker-backdrop" id="wallet-picker" hidden>
+  <div class="picker" role="dialog" aria-modal="true" aria-labelledby="wp-h">
+    <h2 id="wp-h" style="font-size:var(--step-1)">Choose a wallet</h2>
+    <div class="wallet-list" id="wallet-list"></div>
+    <button class="btn ghost" id="wallet-cancel" type="button">Cancel</button>
+  </div>
+</div>
+
 <main class="wrap">
   <div class="app-grid">
     <div class="wide banner" id="mainnet-warning" hidden>

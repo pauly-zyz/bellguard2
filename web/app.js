@@ -170,13 +170,55 @@ async function acceptAll() {
   } catch (e) { log("a-log", e.shortMessage || e.message, true); }
 }
 
+// Wallet discovery (EIP-6963): every installed wallet announces itself, so the user can
+// pick one even when several extensions compete for window.ethereum.
+const wallets = new Map();
+window.addEventListener("eip6963:announceProvider", (e) => {
+  const { info, provider } = e.detail || {};
+  if (info && provider) wallets.set(info.uuid, { info, provider });
+});
+window.dispatchEvent(new Event("eip6963:requestProvider"));
+
+function chooseWallet() {
+  const list = [...wallets.values()];
+  if (list.length === 0 && window.ethereum) {
+    list.push({ info: { uuid: "injected", name: "Browser wallet", icon: "" }, provider: window.ethereum });
+  }
+  if (list.length === 0) return Promise.resolve(null);
+  if (list.length === 1) return Promise.resolve(list[0].provider);
+  return new Promise((resolve) => {
+    const box = $("wallet-picker");
+    const ul = $("wallet-list");
+    ul.innerHTML = "";
+    for (const w of list) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "wallet-option";
+      if (w.info.icon) {
+        const img = document.createElement("img");
+        img.src = w.info.icon; img.alt = ""; img.width = 28; img.height = 28;
+        b.appendChild(img);
+      }
+      b.appendChild(document.createTextNode(w.info.name));
+      b.addEventListener("click", () => { box.hidden = true; resolve(w.provider); });
+      ul.appendChild(b);
+    }
+    $("wallet-cancel").onclick = () => { box.hidden = true; resolve(null); };
+    box.hidden = false;
+    ul.querySelector("button").focus();
+  });
+}
+
 async function connect() {
-  if (!window.ethereum) {
-    log("w-log", "No browser wallet found. Install one (for example MetaMask) and reload.", true);
+  const provider = await chooseWallet();
+  if (!provider) {
+    if (wallets.size === 0 && !window.ethereum) {
+      log("w-log", "No browser wallet found. Install one (for example MetaMask or Rainbow) and reload.", true);
+    }
     return;
   }
   try {
-    wallet = createWalletClient({ chain: chainFor(chainId), transport: custom(window.ethereum) });
+    wallet = createWalletClient({ chain: chainFor(chainId), transport: custom(provider) });
     [account] = await wallet.requestAddresses();
     try {
       await wallet.switchChain({ id: chainId });
