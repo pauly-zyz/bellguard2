@@ -17,7 +17,7 @@ is what stands between the repository and a mainnet launch, in order.
 - [x] Contracts: hook, vault, claims, calendar (62 tests incl. both token orientations)
 - [x] Deployment dry run against live Robinhood Chain testnet state
 - [ ] Broadcast `DeployTestnetDemo` with a funded testnet key (`docs/deploy.md`)
-- [x] Website live on Vercel (bellguard2.vercel.app), deployed from `web/` on every push to main
+- [x] Website live on Vercel at www.bellguard.app (also bellguard2.vercel.app), deployed from `web/` on every push to main
 - [ ] Put the demo addresses in `web/config.js` after the testnet deployment
 - [ ] Run a settlement keeper for at least four real weekends
 - [ ] Invite testers: LPs claim, underwriters deposit and withdraw

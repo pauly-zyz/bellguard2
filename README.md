@@ -13,7 +13,7 @@ gap. Bellguard charges a small, visible surcharge on closed-market swaps,
 puts it in an underwriter vault, and pays LPs when a gap actually hurts them.
 Premiums rise around earnings and other scheduled events.
 
-Website: **https://bellguard2.vercel.app**
+Website: **https://www.bellguard.app**
 
 Status: **live on Robinhood Chain mainnet since 2026-10-30, not audited.** Pools: COIN/USDG and
 MSTR/USDG on Uniswap v4. Addresses: [`contracts/deployments/4663.json`](contracts/deployments/4663.json).
@@ -39,7 +39,7 @@ large reopen gaps, not as a weekly loss refund.
 | [`research/`](research/) | `gapscan`: measures historical gaps and LP losses from on-chain data and estimates the premium |
 | [`contracts/`](contracts/) | Foundry project: `BellguardHook` (Uniswap v4), `CoverVault` (ERC-4626), `BellguardClaims`, `MarketCalendar`, `GapCoverMath`; deploy scripts; 62 tests |
 | [`keeper/`](keeper/) | Settlement keeper (GitHub Actions, hourly) |
-| [`web/`](web/) | Website and app (static), live at [bellguard2.vercel.app](https://bellguard2.vercel.app) |
+| [`web/`](web/) | Website and app (static), live at [bellguard.app](https://www.bellguard.app) |
 | [`docs/design.md`](docs/design.md) | Product and protocol design, open questions |
 | [`docs/research-plan.md`](docs/research-plan.md) | Phase 0 plan and the go/no-go gate |
 | [`docs/robinhood-chain.md`](docs/robinhood-chain.md) | Verified addresses and facts about Robinhood Chain |
