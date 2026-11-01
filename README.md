@@ -13,7 +13,7 @@ gap. Bellguard charges a small, visible surcharge on closed-market swaps,
 puts it in an underwriter vault, and pays LPs when a gap actually hurts them.
 Premiums rise around earnings and other scheduled events.
 
-Website: **https://www.bellguard.app**
+Website: **https://www.bellguard.app** · X: **[@Bellguardapp](https://x.com/Bellguardapp)**
 
 Status: **live on Robinhood Chain mainnet since 2026-10-30, not audited.** Pools: COIN/USDG and
 MSTR/USDG on Uniswap v4. Addresses: [`contracts/deployments/4663.json`](contracts/deployments/4663.json).
