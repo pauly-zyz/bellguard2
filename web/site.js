@@ -201,8 +201,39 @@
     }
   }
 
+  // Home page: stock tiles for Bellguard Perps, with live Chainlink prices via the site's relay.
+  function renderTradeTiles() {
+    const host = document.getElementById("tt-grid");
+    const P = window.BELLGUARD_PERPS;
+    if (!host || !P) return;
+    const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    host.innerHTML = P.markets.map((m, i) => "<div class='tt-card'><span class='logo' aria-hidden='true'><span class='ini'>" + esc(m.symbol.slice(0, 4)) + "</span>"
+      + (m.logo ? "<img src='" + esc(m.logo) + "' alt='' loading='lazy'>" : "") + "</span>"
+      + "<span class='tk'>" + esc(m.symbol) + "</span><span class='px' data-px='" + i + "'>–</span>"
+      + "<span class='nm'>" + esc(m.name) + "</span>"
+      + "<span class='acts'><a class='l' href='trade.html?m=" + esc(m.symbol) + "&side=long'>Long</a><a class='s' href='trade.html?m=" + esc(m.symbol) + "&side=short'>Short</a></span></div>").join("");
+    host.querySelectorAll(".logo img").forEach((img) => img.addEventListener("error", () => img.remove()));
+    const body = P.markets.map((m, i) => ({ jsonrpc: "2.0", id: i, method: "eth_call", params: [{ to: m.sourceFeed, data: "0xfeaf968c" }, "latest"] }));
+    const load = async (url) => {
+      const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      if (!res.ok) throw new Error("rpc " + res.status);
+      return res.json();
+    };
+    (async () => {
+      let out;
+      try { out = await load(P.source.relay); } catch { try { out = await load(P.source.rpc); } catch { return; } }
+      for (const r of out || []) {
+        if (!r || !r.result || r.result.length < 130) continue;
+        const answer = Number(BigInt("0x" + r.result.slice(66, 130))) / 1e8; // latestRoundData word 1
+        const el = host.querySelector("[data-px='" + r.id + "']");
+        if (el && answer > 0) el.textContent = "$" + answer.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+    })();
+  }
+
   renderClock();
   renderFindings();
+  renderTradeTiles();
   renderTape();
   renderContracts();
 

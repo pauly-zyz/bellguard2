@@ -531,6 +531,13 @@ $("t-pos").addEventListener("click", (e) => {
   const a = e.target.closest("[data-add]"); if (a) return addCol(a.dataset.add);
 });
 
+// Links from the home page: trade.html?m=TSLA&side=short
+{
+  const q = new URLSearchParams(location.search);
+  const i = markets.findIndex((m) => m.symbol === (q.get("m") || "").toUpperCase());
+  if (i >= 0) sel = i;
+  if (q.get("side") === "short") { isLong = false; $("t-short").classList.add("on"); $("t-long").classList.remove("on"); }
+}
 renderList(); renderHead(); renderSummary(); renderSpark();
 loadPrices();
 refreshAccount();

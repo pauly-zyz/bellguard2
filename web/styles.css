@@ -508,3 +508,27 @@ footer code { overflow-wrap: anywhere; }
   .t-head .px { margin-left: 0; text-align: left; }
 }
 .nav-trade { color: var(--muted); text-decoration: none; font-size: var(--step--1); font-weight: 600; } .nav-trade:hover { color: var(--brass); }
+
+/* home: trade section */
+.new-pill { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 14px; padding: 6px 14px 6px 6px; border-radius: 999px; text-decoration: none;
+  font-size: var(--step--1); color: var(--ink); border: 1px solid color-mix(in srgb, var(--brass) 45%, var(--rule)); background: color-mix(in srgb, var(--brass) 8%, var(--surface)); }
+.new-pill b { font: 700 0.68rem var(--font-data); letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; background: var(--brass); color: #1a1206; }
+.new-pill:hover { color: var(--ink); border-color: var(--brass); }
+.trade-band { background: radial-gradient(50rem 22rem at 100% 0%, color-mix(in srgb, var(--open) 8%, transparent), transparent 70%); }
+.trade-band .section-head { margin-bottom: 28px; }
+.tt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.tt-card { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; padding: 14px; border-radius: 14px;
+  border: 1px solid var(--rule); background: var(--surface); box-shadow: var(--shadow); }
+.tt-card .logo { grid-row: span 2; }
+.tt-card .tk { font: 700 0.95rem var(--font-data); }
+.tt-card .nm { color: var(--muted); font-size: 0.75rem; grid-column: 2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tt-card .px { font: 600 0.95rem var(--font-data); font-variant-numeric: tabular-nums; text-align: right; }
+.tt-card .acts { grid-column: 3; display: flex; gap: 6px; justify-content: flex-end; }
+.tt-card .acts a { font: 700 0.7rem var(--font-body); text-decoration: none; padding: 4px 10px; border-radius: 999px; }
+.tt-card .acts .l { color: var(--open); border: 1px solid color-mix(in srgb, var(--open) 50%, transparent); background: color-mix(in srgb, var(--open) 10%, transparent); }
+.tt-card .acts .s { color: var(--closed); border: 1px solid color-mix(in srgb, var(--closed) 50%, transparent); background: color-mix(in srgb, var(--closed) 10%, transparent); }
+.tt-card .acts a:hover { filter: brightness(1.15); }
+.tt-points { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 28px; }
+.tt-points div { display: grid; gap: 2px; padding: 14px 16px; border-left: 2px solid var(--brass); background: color-mix(in srgb, var(--surface) 60%, transparent); border-radius: 0 10px 10px 0; }
+.tt-points span { color: var(--muted); font-size: var(--step--1); }
+@media (max-width: 720px) { .tt-points { grid-template-columns: minmax(0, 1fr); } }

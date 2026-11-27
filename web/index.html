@@ -49,6 +49,7 @@
   <div class="hero-band">
     <div class="wrap hero">
       <div>
+        <a class="new-pill reveal" href="trade.html"><b>New</b> Long or short stocks up to 5x on Elysium <span aria-hidden="true">→</span></a>
         <p class="eyebrow reveal">Launching on Elysium · $BLGD</p>
         <h1 class="reveal d1">Your liquidity, covered until the <em>opening&nbsp;bell</em>.</h1>
         <p class="lede reveal d2">Stock tokens trade all weekend. The stock market doesn't. Bellguard charges a small premium on swaps while the market is closed, and pays liquidity providers when the Monday gap hurts them.</p>
@@ -94,6 +95,23 @@
   <div class="tape" aria-label="Measured weekend gaps per pool">
     <div class="tape-inner" id="tape"></div>
   </div>
+
+  <section class="band trade-band" id="trade">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">New · Bellguard Perps</p>
+        <h2>Long or short stocks, <em style="color:var(--brass)">bell-aware</em></h2>
+        <p>Trade TSLA, NVDA, AAPL, SPY and more with up to 5x leverage, settled in USDC on Elysium. Trading pauses when the stock market closes, so nobody can trade a frozen weekend price.</p>
+      </div>
+      <div class="tt-grid" id="tt-grid"></div>
+      <div class="tt-points">
+        <div><b>Up to 5x</b><span>3x in the last two hours before the bell</span></div>
+        <div><b>Paused while closed</b><span>No trading on stale weekend prices</span></div>
+        <div><b>Winners always paid</b><span>Every position's max profit is reserved in the vault</span></div>
+      </div>
+      <a class="btn big" href="trade.html">Open Trade <span class="arrow" aria-hidden="true">→</span></a>
+    </div>
+  </section>
 
   <section class="band" id="how">
     <div class="wrap">
@@ -241,6 +259,7 @@
 
 <script src="config.js"></script>
 <script src="data.js"></script>
+<script src="perps-config.js"></script>
 <script src="site.js"></script>
 </body>
 </html>
