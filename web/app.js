@@ -141,8 +141,7 @@ function setDeployedUi() {
   $("liquidity").hidden = !(d && d.positionManager);
   const sel = $("pool-select");
   const pools = d && d.pools ? d.pools : [];
-  // Until on-chain status is known, show only pools not marked pending in the config.
-  const shown = pools.map((p, i) => i).filter((i) => (poolLive ? poolLive[i] : !pools[i].pending));
+  const shown = shownPools();
   const sig = chainId + ":" + shown.join(",");
   if (sel.dataset.sig !== sig) {
     const keep = sel.value;
@@ -150,9 +149,120 @@ function setDeployedUi() {
     if (shown.includes(Number(keep))) sel.value = keep;
     sel.dataset.sig = sig;
   }
+  renderMarkets();
   document.querySelectorAll("[data-needs-deploy]").forEach((b) => { b.disabled = !d || !account; });
   document.querySelectorAll(".example-tag").forEach((t) => { t.hidden = !!d; });
 }
+
+// ---------------------------------------------------------------- markets (stock cards)
+
+/** Indexes of configured pools to offer: live ones once known, otherwise those not marked pending. */
+function shownPools() {
+  const d = dep();
+  const pools = d && d.pools ? d.pools : [];
+  return pools.map((p, i) => i).filter((i) => (poolLive ? poolLive[i] : !pools[i].pending));
+}
+let marketData = [];          // per pool: { price, updated, liquidity }
+let mkFilter = "all";
+let mkExpanded = false;
+const MK_COLLAPSED = 8;
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtPrice = (v) => v == null ? "–" : "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function ago(ts) {
+  if (!ts) return "";
+  const m = Math.max(0, Math.round((Date.now() / 1000 - ts) / 60));
+  return m < 60 ? m + "m ago" : m < 2880 ? Math.round(m / 60) + "h ago" : Math.round(m / 1440) + "d ago";
+}
+function logoHtml(p, cls) {
+  return "<span class='logo" + (cls ? " " + cls : "") + "' aria-hidden='true'><span class='ini'>" + esc(p.symbol.slice(0, 4)) + "</span>"
+    + (p.logo ? "<img src='" + esc(p.logo) + "' alt='' loading='lazy' decoding='async'>" : "") + "</span>";
+}
+// A logo that fails to load leaves the ticker badge underneath.
+document.addEventListener("error", (e) => { if (e.target.matches && e.target.matches(".logo img")) e.target.remove(); }, true);
+
+function selectPool(i) {
+  const sel = $("pool-select");
+  if (sel.value === String(i)) return;
+  sel.value = String(i);
+  sel.dispatchEvent(new Event("change"));
+}
+
+function renderSelected() {
+  const d = dep();
+  const host = $("mk-selected");
+  if (!d || !d.pools) { host.innerHTML = ""; return; }
+  const i = selectedPoolIndex();
+  const p = d.pools[i];
+  if (!p) { host.innerHTML = ""; return; }
+  const m = marketData[i] || {};
+  const liq = m.liquidity;
+  host.innerHTML = logoHtml(p, "lg")
+    + "<div class='who'><span class='tk'>" + esc(p.symbol) + " <span class='muted' style='font:500 0.9rem var(--font-data)'>/ USDG</span></span><span class='nm'>" + esc(p.name || p.symbol) + (p.type ? " · " + esc(p.type) : "") + "</span></div>"
+    + "<div class='px'><b>" + fmtPrice(m.price) + "</b><span>Chainlink" + (m.updated ? " · " + ago(m.updated) : "") + "</span></div>"
+    + "<div class='tags'><span class='tag ok'>Gap cover on</span><span class='tag'>1% deductible</span><span class='tag'>Up to 5% per window</span>"
+    + (liq == null ? "" : liq > 0n ? "<span class='tag ok'>Liquidity live</span>" : "<span class='tag warn'>Needs first liquidity</span>") + "</div>";
+}
+
+function renderMarkets() {
+  const d = dep();
+  const box = $("mk-browser");
+  if (!d || !d.pools) { box.hidden = true; renderSelected(); return; }
+  box.hidden = false;
+  const shown = shownPools();
+  const q = ($("mk-search").value || "").trim().toLowerCase();
+  const list = shown.filter((i) => {
+    const p = d.pools[i];
+    if (mkFilter === "ETF" && p.type !== "ETF") return false;
+    if (mkFilter === "stock" && p.type === "ETF") return false;
+    return !q || p.symbol.toLowerCase().includes(q) || (p.name || "").toLowerCase().includes(q);
+  });
+  const cur = selectedPoolIndex();
+  const collapse = !q && mkFilter === "all" && !mkExpanded && list.length > MK_COLLAPSED + 2;
+  // Keep the selected stock visible even when the list is collapsed.
+  let visible = collapse ? list.slice(0, MK_COLLAPSED) : list;
+  if (collapse && list.includes(cur) && !visible.includes(cur)) visible = [...visible.slice(0, MK_COLLAPSED - 1), cur];
+  $("mk-count").textContent = shown.length + " covered stock" + (shown.length === 1 ? "" : "s");
+  $("mk-grid").innerHTML = visible.map((i) => {
+    const p = d.pools[i];
+    const m = marketData[i] || {};
+    const st = m.liquidity == null ? "" : m.liquidity > 0n
+      ? "<i class='dot ok' title='Liquidity live'></i><span class='visually-hidden'>, liquidity live</span>"
+      : "<i class='dot' title='Needs liquidity'></i><span class='visually-hidden'>, needs liquidity</span>";
+    return "<button type='button' class='mk-card' role='option' data-i='" + i + "' aria-selected='" + (i === cur) + "'>"
+      + logoHtml(p) + "<span class='tk'>" + esc(p.symbol) + st + "</span><span class='px'>" + fmtPrice(m.price) + "</span>"
+      + "<span class='nm'>" + esc(p.name || "") + "</span></button>";
+  }).join("");
+  $("mk-empty").hidden = list.length > 0;
+  $("mk-more").hidden = !collapse;
+  $("mk-more").textContent = "Show all " + list.length + " stocks";
+  renderSelected();
+}
+
+/** Chainlink price and pool liquidity for every listed stock, in one multicall. */
+async function loadMarkets() {
+  const d = dep();
+  if (!d || !d.pools) return;
+  try {
+    const v = await readMany(d.pools.flatMap((p) => [
+      { address: p.feed, abi: ABI.feed, functionName: "latestRoundData" },
+      { address: d.stateView, abi: ABI.stateView, functionName: "getLiquidity", args: [poolIdOf(p.key)] },
+    ]));
+    marketData = d.pools.map((p, i) => ({ price: Number(v[2 * i][1]) / 1e8, updated: Number(v[2 * i][3]), liquidity: v[2 * i + 1] }));
+    renderMarkets();
+  } catch { /* keep the last figures; the next refresh tries again */ }
+}
+
+$("mk-grid").addEventListener("click", (e) => {
+  const card = e.target.closest(".mk-card");
+  if (card) selectPool(card.dataset.i);
+});
+$("mk-search").addEventListener("input", renderMarkets);
+$("mk-more").addEventListener("click", () => { mkExpanded = true; renderMarkets(); });
+document.querySelectorAll(".mk-filter").forEach((b) => b.addEventListener("click", () => {
+  mkFilter = b.dataset.filter;
+  document.querySelectorAll(".mk-filter").forEach((x) => x.classList.toggle("on", x === b));
+  renderMarkets();
+}));
 
 /** Read which configured pools are initialised, so the pool list only offers live ones. */
 async function loadPoolStatus() {
@@ -162,6 +272,7 @@ async function loadPoolStatus() {
     const slots = await readMany(d.pools.map((p) => ({ address: d.stateView, abi: ABI.stateView, functionName: "getSlot0", args: [poolIdOf(p.key)] })));
     poolLive = slots.map((s) => s[0] > 0n);
     setDeployedUi();
+    loadMarkets();
   } catch { setTimeout(loadPoolStatus, 10_000); }
 }
 
@@ -645,8 +756,10 @@ $("add-stocks").addEventListener("click", addStocks);
 $("lp-add").addEventListener("click", addLiquidity);
 for (const id of ["lp-usdg", "lp-range"]) $(id).addEventListener("change", () => planLiquidity().catch((e) => log("lp-log", e.shortMessage || e.message, true)));
 $("pool-select").addEventListener("change", () => planLiquidity().catch(() => {}));
+$("pool-select").addEventListener("change", renderMarkets);
 renderPositions();
 planLiquidity().catch(() => {});
 refresh();
 loadPoolStatus();
 setInterval(refresh, 30000);
+setInterval(loadMarkets, 60000);

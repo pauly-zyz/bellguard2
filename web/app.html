@@ -82,12 +82,13 @@
 
     <section class="panel wide market" id="clock" aria-labelledby="mk-h">
       <div class="panel-head">
-        <h2 id="mk-h">Market</h2>
+        <h2 id="mk-h">Markets</h2>
         <div class="row" style="align-items:center">
-          <select id="pool-select" aria-label="Pool"><option>Example pool</option></select>
+          <select id="pool-select" class="visually-hidden" aria-label="Pool" tabindex="-1"><option>Example pool</option></select>
           <span class="pill open">Market open</span>
         </div>
       </div>
+      <div class="mk-selected" id="mk-selected" aria-live="polite"></div>
       <div class="market-body">
         <div class="dial" aria-hidden="true">
           <svg viewBox="0 0 120 120"><circle class="track-ring" cx="60" cy="60" r="52"/><circle class="progress-ring" cx="60" cy="60" r="52" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/></svg>
@@ -104,6 +105,23 @@
             <dt>Premium on swaps now <span class="example-tag">Example</span></dt><dd id="m-surcharge">–</dd>
           </dl>
         </div>
+      </div>
+      <div class="mk-browser" id="mk-browser" hidden>
+        <div class="mk-toolbar">
+          <h3 id="mk-count">Covered stocks</h3>
+          <div class="mk-tools">
+            <div class="mk-filters" role="group" aria-label="Filter">
+              <button type="button" class="mk-filter on" data-filter="all">All</button>
+              <button type="button" class="mk-filter" data-filter="stock">Stocks</button>
+              <button type="button" class="mk-filter" data-filter="ETF">ETFs</button>
+            </div>
+            <input id="mk-search" type="search" placeholder="Search ticker or name" aria-label="Search stocks" autocomplete="off">
+          </div>
+        </div>
+        <div class="mk-grid" id="mk-grid" role="listbox" aria-label="Choose a stock"></div>
+        <p class="mk-empty muted" id="mk-empty" hidden>No stock matches that search.</p>
+        <button type="button" class="btn ghost mk-more" id="mk-more" hidden>Show all</button>
+        <p class="note mk-legend" style="margin:0"><span><i class="dot ok"></i>Liquidity live</span><span><i class="dot"></i>Needs liquidity</span><span>Prices are the latest Chainlink reference prices. Pick a stock to see its cover and add liquidity.</span></p>
       </div>
     </section>
 
@@ -188,7 +206,7 @@
 </main>
 
 <footer>
-  <div class="wrap"><p>Use only amounts you can afford to lose. <a href="/#contracts">Contract addresses</a>. Updates: <a href="https://x.com/Bellguardapp">@Bellguardapp on X</a>. Official $BLGD CA (Elysium): <code class="num">0x65111d720c2f015b3ee5d4401384efc60f5ebdc8</code> · <a href="https://montramarkets.xyz/token/0x65111d720c2f015b3ee5d4401384efc60f5ebdc8" target="_blank" rel="noopener">Buy on Montra</a>.</p></div>
+  <div class="wrap"><p>Use only amounts you can afford to lose. Company names and logos are trademarks of their owners and are shown only to identify each stock. <a href="/#contracts">Contract addresses</a>. Updates: <a href="https://x.com/Bellguardapp">@Bellguardapp on X</a>. Official $BLGD CA (Elysium): <code class="num">0x65111d720c2f015b3ee5d4401384efc60f5ebdc8</code> · <a href="https://montramarkets.xyz/token/0x65111d720c2f015b3ee5d4401384efc60f5ebdc8" target="_blank" rel="noopener">Buy on Montra</a>.</p></div>
 </footer>
 
 <script src="config.js"></script>
