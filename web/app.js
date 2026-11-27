@@ -78,7 +78,8 @@ let account = null;
 let wallet = null;
 
 const chainFor = (id) => defineChain({
-  id, name: CFG.chains[id].name, nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  id, name: CFG.chains[id].name, nativeCurrency: CFG.chains[id].nativeCurrency || { name: "Ether", symbol: "ETH", decimals: 18 },
+  blockExplorers: CFG.chains[id].explorer ? { default: { name: "Explorer", url: CFG.chains[id].explorer } } : undefined,
   rpcUrls: { default: { http: [CFG.chains[id].rpc] } },
   contracts: CFG.chains[id].multicall3 ? { multicall3: { address: CFG.chains[id].multicall3 } } : undefined,
 });

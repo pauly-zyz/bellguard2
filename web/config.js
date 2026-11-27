@@ -287,6 +287,16 @@ window.BELLGUARD_CONFIG = {
         ]
       },
     },
+    // Elysium mainnet (Kinetiq, settles to HyperEVM; gas token HYPE). Home of the $BLGD token.
+    // Bellguard's cover contracts are not deployed here yet.
+    99901: {
+      name: "Elysium",
+      rpc: "https://rpc.elysium.kinetiq.xyz",
+      relay: "/api/rpc?chain=99901",
+      nativeCurrency: { name: "HYPE", symbol: "HYPE", decimals: 18 },
+      explorer: "https://elysium.kinetiq.xyz",
+      deployment: null,
+    },
     46630: {
       name: "Testnet",
       rpc: "https://rpc.testnet.chain.robinhood.com",

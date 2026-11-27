@@ -206,6 +206,25 @@
   renderTape();
   renderContracts();
 
+  // "Add network to wallet" buttons (data-add-chain = chain ID from config.js).
+  document.querySelectorAll("[data-add-chain]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const note = document.getElementById("chain-note");
+      const say = (t) => { if (note) { note.textContent = t; note.hidden = false; } };
+      const id = Number(btn.dataset.addChain);
+      const c = window.BELLGUARD_CONFIG && window.BELLGUARD_CONFIG.chains[id];
+      if (!c) return;
+      if (!window.ethereum) { say("No browser wallet found. Add it manually: network " + c.name + ", chain ID " + id + ", RPC " + c.rpc + ", currency " + c.nativeCurrency.symbol + "."); return; }
+      try {
+        await window.ethereum.request({ method: "wallet_addEthereumChain", params: [{
+          chainId: "0x" + id.toString(16), chainName: c.name, nativeCurrency: c.nativeCurrency,
+          rpcUrls: [c.rpc], blockExplorerUrls: c.explorer ? [c.explorer] : [],
+        }] });
+        say(c.name + " is in your wallet (chain ID " + id + ").");
+      } catch (e) { say("Not added: " + ((e && e.message) || "request rejected") + "."); }
+    });
+  });
+
   // Copy buttons with a data-copy value (e.g. the official token address).
   document.querySelectorAll("[data-copy]").forEach((btn) => {
     btn.addEventListener("click", async () => {
