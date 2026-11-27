@@ -33,7 +33,7 @@ contract DeployPerps is Script {
         return PerpEngine.Params({
             openFeeBps: 8, closeFeeBps: 8, spreadBps: 5, maintenanceBps: 100, liquidationFeeBps: 20,
             deleverageFeeBps: 5, maxProfitBps: 90_000, borrowBpsPerDay: 3, closedBorrowMultiplier: 3,
-            maxLeverage: 20, weekendMaxLeverage: 5, preCloseWindow: 2 hours, maxUtilizationBps: 8_000,
+            maxLeverage: 5, weekendMaxLeverage: 3, preCloseWindow: 2 hours, maxUtilizationBps: 8_000,
             minCollateral: 10e6
         });
     }

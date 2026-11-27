@@ -340,6 +340,32 @@ contract PerpsTest is Test {
         engine.setParams(p);
     }
 
+    /// Launch settings (script/DeployPerps.s.sol): 5x max, 3x in the pre-close window.
+    function test_launchLeverageCaps() public {
+        PerpEngine.Params memory p = defaultParams();
+        p.maxLeverage = 5;
+        p.weekendMaxLeverage = 3;
+        vm.prank(owner);
+        engine.setParams(p);
+
+        vm.prank(alice);
+        vm.expectRevert(PerpEngine.LeverageTooHigh.selector);
+        engine.openPosition(0, true, 1_000e6, 6_000e6, 0); // 6x
+        uint256 id = _open(alice, true, 1_004e6, 5_000e6); // 5x after the fee
+
+        vm.warp(CLOSE - 1 hours);
+        _price(P100);
+        vm.prank(bob);
+        vm.expectRevert(PerpEngine.LeverageTooHigh.selector);
+        engine.openPosition(0, true, 1_004e6, 4_000e6, 0); // 4x > 3x before the close
+        _open(bob, true, 1_003e6, 3_000e6); // 3x is fine
+
+        vm.prank(keeper);
+        engine.deleverage(id); // the 5x position is trimmed to 3x
+        (int256 eq,,,,) = engine.positionValue(id);
+        assertLe(engine.position(id).size, uint256(eq) * 3);
+    }
+
     /// Engine always holds exactly the collateral of open positions, whatever happens.
     function testFuzz_solvency(uint96 col, uint16 levX, bool isLong, uint16 movePct, bool up) public {
         uint256 c = bound(uint256(col), 20e6, 50_000e6);

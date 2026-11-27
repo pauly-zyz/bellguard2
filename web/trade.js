@@ -9,7 +9,7 @@ const D = P.deployment; // null until deployed: preview mode
 const WINDOWS = window.BELLGUARD_WINDOWS || [];
 
 // Defaults match contracts/script/DeployPerps.s.sol; replaced by on-chain values once deployed.
-let params = { openFeeBps: 8, closeFeeBps: 8, spreadBps: 5, maintenanceBps: 100, maxProfitBps: 90000, borrowBpsPerDay: 3, closedBorrowMultiplier: 3, maxLeverage: 20, weekendMaxLeverage: 5, preCloseWindow: 7200 };
+let params = { openFeeBps: 8, closeFeeBps: 8, spreadBps: 5, maintenanceBps: 100, maxProfitBps: 90000, borrowBpsPerDay: 3, closedBorrowMultiplier: 3, maxLeverage: 5, weekendMaxLeverage: 3, preCloseWindow: 7200 };
 
 const ABI = {
   feed: parseAbi([

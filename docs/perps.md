@@ -21,7 +21,7 @@ Elysium testnet (chain 99801), not audited.**
    collateral still works.
 2. **Fresh price after reopen.** Trading needs a price published after the latest reopen.
 3. **Pre-close leverage cap.** In the last 2 hours before a close, new positions are limited to
-   5x, and anyone can trim older positions down to 5x for a 0.05% keeper fee.
+   3x, and anyone can trim older positions down to 3x for a 0.05% keeper fee.
 4. **Weekend borrow ×3.** Borrow fees accrue three times faster over closures. LPs carry the
    reopen gap and are paid for it.
 
@@ -31,7 +31,8 @@ Elysium testnet (chain 99801), not audited.**
   position closes, and LPs can only withdraw unreserved assets.
 - Reserves are limited to 80% of vault assets; open interest is capped per market and side.
 - 1% maintenance margin, 0.2% liquidation reward, 0.08% open and close fees, 0.05% spread,
-  0.03% per day borrow fee. Max leverage 20x.
+  0.03% per day borrow fee. Max leverage 5x for launch (the contract allows the owner
+  to raise it later, up to 100x, within the bounds checked in `setParams`).
 
 ## Known limits (before any mainnet use)
 
