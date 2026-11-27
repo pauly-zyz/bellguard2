@@ -1,0 +1,38 @@
+name: Perps keeper (Elysium testnet)
+
+# Mirrors Chainlink stock prices to Bellguard Perps on Elysium testnet, liquidates unsafe
+# positions and trims leverage before the market closes. Runs only once the perps
+# deployment file exists. Needs the secret PERPS_KEEPER_KEY (the feed updater wallet).
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: perps-keeper
+  cancel-in-progress: false
+
+jobs:
+  keep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: keeper
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check deployment
+        id: dep
+        run: test -f ../contracts/deployments/perps-99801.json && echo "ok=1" >> "$GITHUB_OUTPUT" || echo "Perps not deployed yet; nothing to do."
+      - uses: actions/setup-node@v4
+        if: steps.dep.outputs.ok == '1'
+        with:
+          node-version: 22
+      - if: steps.dep.outputs.ok == '1'
+        run: npm install --no-audit --no-fund
+      - name: Run keeper
+        if: steps.dep.outputs.ok == '1'
+        env:
+          PERPS_KEEPER_KEY: ${{ secrets.PERPS_KEEPER_KEY }}
+          DRY_RUN: ${{ secrets.PERPS_KEEPER_KEY == '' && '1' || '0' }}
+        run: npm run perps

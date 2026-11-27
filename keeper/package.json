@@ -2,6 +2,6 @@
   "name": "bellguard-keeper",
   "private": true,
   "type": "module",
-  "scripts": { "settle": "node settle.mjs" },
+  "scripts": { "settle": "node settle.mjs", "perps": "node perps.mjs" },
   "dependencies": { "viem": "2.21.54" }
 }

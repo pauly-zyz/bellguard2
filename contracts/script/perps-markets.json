@@ -1,0 +1,14 @@
+[
+  { "symbol": "TSLA", "name": "Tesla" },
+  { "symbol": "NVDA", "name": "NVIDIA" },
+  { "symbol": "AAPL", "name": "Apple" },
+  { "symbol": "AMZN", "name": "Amazon" },
+  { "symbol": "GOOGL", "name": "Alphabet" },
+  { "symbol": "META", "name": "Meta" },
+  { "symbol": "MSFT", "name": "Microsoft" },
+  { "symbol": "PLTR", "name": "Palantir" },
+  { "symbol": "COIN", "name": "Coinbase" },
+  { "symbol": "MSTR", "name": "Strategy" },
+  { "symbol": "SPY", "name": "S&P 500 ETF" },
+  { "symbol": "QQQ", "name": "Nasdaq-100 ETF" }
+]

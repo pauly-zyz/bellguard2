@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bellguard Trade</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#090e18">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 4c-5 0-8 4-8 9v6l-3 4h22l-3-4v-6c0-5-3-9-8-9z' fill='%23e2b052'/%3E%3Ccircle cx='16' cy='26.5' r='2.4' fill='%23e2b052'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://www.bellguard.app/trade">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Bellguard">
+<meta property="og:title" content="Bellguard Trade">
+<meta property="og:description" content="Long or short stocks on Elysium, with leverage that respects the opening bell.">
+<meta property="og:url" content="https://www.bellguard.app/trade">
+<meta property="og:image" content="https://www.bellguard.app/og.png">
+<meta property="og:image:width" content="1500">
+<meta property="og:image:height" content="500">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@Bellguardapp">
+<meta name="twitter:image" content="https://www.bellguard.app/og.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,600;0,6..96,700;1,6..96,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="trade-page">
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="Bellguard home">
+      <svg class="bell" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4c-5 0-8 4-8 9v6l-3 4h22l-3-4v-6c0-5-3-9-8-9z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="26.5" r="2.4" fill="currentColor"/><path d="M11 13h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Bellguard
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="app.html" class="hide-sm">Cover app</a>
+      <a href="trade.html" aria-current="page">Trade</a>
+      <span class="net-badge" id="net-badge">Elysium Testnet</span>
+      <button class="btn" id="t-connect" type="button">Connect wallet</button>
+    </nav>
+  </div>
+</header>
+
+<div class="picker-backdrop" id="wallet-picker" hidden>
+  <div class="picker" role="dialog" aria-modal="true" aria-labelledby="wp-h">
+    <h2 id="wp-h" style="font-size:var(--step-1)">Choose a wallet</h2>
+    <div class="wallet-list" id="wallet-list"></div>
+    <p class="note" style="margin:0">Don't see your wallet? Unlock it, then reload this page.</p>
+    <button class="btn ghost" id="wallet-cancel" type="button">Cancel</button>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="app-hero">
+    <div>
+      <p class="eyebrow">Bellguard Perps · Elysium testnet</p>
+      <h1>Long or short stocks, <em style="color:var(--brass)">bell-aware</em></h1>
+    </div>
+    <p class="muted" style="max-width:48ch">Up to 20x on TSLA, NVDA, SPY and more, settled in USD. Trading pauses when the stock market closes, so nobody trades a frozen weekend price.</p>
+  </div>
+
+  <div class="banner wide" id="t-preview">
+    <strong>Preview.</strong> Bellguard Perps isn't deployed on Elysium testnet yet. Prices are live from Chainlink; trading switches on once the contracts are deployed. Testnet only: tokens have no value.
+  </div>
+  <div class="banner wide" id="t-testnet" hidden>
+    <strong>Testnet.</strong> Trades use tUSD, a free test token with no value. Get some with the faucet button. Not audited.
+  </div>
+  <p class="log" id="t-log"></p>
+
+  <div class="trade-grid">
+    <aside class="panel t-markets" aria-labelledby="tm-h">
+      <div class="panel-head"><h2 id="tm-h" style="font-size:var(--step-1)">Markets</h2><span class="pill open" id="t-pill">Market open</span></div>
+      <input id="t-search" type="search" placeholder="Search" aria-label="Search markets" autocomplete="off">
+      <div class="t-list" id="t-list" role="listbox" aria-label="Markets"></div>
+    </aside>
+
+    <section class="panel t-chart" aria-labelledby="tc-h">
+      <div class="t-head" id="t-head"></div>
+      <div class="t-spark" id="t-spark" aria-hidden="true"></div>
+      <div class="t-bell" id="t-bell"></div>
+    </section>
+
+    <section class="panel t-order" aria-labelledby="to-h">
+      <h2 id="to-h" class="visually-hidden">Order</h2>
+      <div class="t-side" role="group" aria-label="Side">
+        <button type="button" class="t-long on" id="t-long">Long</button>
+        <button type="button" class="t-short" id="t-short">Short</button>
+      </div>
+      <div class="field">
+        <label for="t-collateral">Collateral (tUSD)</label>
+        <input id="t-collateral" inputmode="decimal" placeholder="100" value="100">
+        <span class="muted t-bal" id="t-bal"></span>
+      </div>
+      <div class="field">
+        <label for="t-lev">Leverage <b id="t-lev-v">5x</b></label>
+        <input id="t-lev" type="range" min="1" max="20" step="1" value="5">
+        <div class="t-ticks"><span>1x</span><span>5x</span><span>10x</span><span>20x</span></div>
+      </div>
+      <dl class="kv t-sum" id="t-sum"></dl>
+      <button class="btn big" id="t-submit" type="button">Connect wallet</button>
+      <button class="btn ghost" id="t-faucet" type="button" hidden>Get 10,000 test tUSD</button>
+      <p class="log" id="t-olog"></p>
+    </section>
+
+    <section class="panel t-positions wide" aria-labelledby="tp-h">
+      <div class="panel-head"><h2 id="tp-h" style="font-size:var(--step-1)">Your positions</h2><span class="muted" id="t-pcount"></span></div>
+      <div class="table-wrap" style="margin:0"><table>
+        <thead><tr><th>Market</th><th>Side</th><th>Size</th><th>Collateral</th><th>Entry</th><th>Mark</th><th>PnL</th><th>Liq. price</th><th></th></tr></thead>
+        <tbody id="t-pos"><tr><td colspan="9" class="muted" style="text-align:left">Connect a wallet to see your positions.</td></tr></tbody>
+      </table></div>
+    </section>
+
+    <section class="panel t-lp wide" aria-labelledby="tl-h">
+      <div class="panel-title"><span class="icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/><path d="M8 6V4h8v2"/></svg></span><h2 id="tl-h">Liquidity vault</h2></div>
+      <p class="muted">The vault takes the other side of every trade. It earns fees, borrow fees and trader losses, and pays trader profits. Each open position reserves its maximum profit, so winners are always paid.</p>
+      <dl class="kv"><dt>Vault assets</dt><dd id="tl-assets">–</dd><dt>Reserved for open positions</dt><dd id="tl-reserved">–</dd><dt>Your deposit</dt><dd id="tl-mine">–</dd></dl>
+      <div class="row">
+        <div class="field"><label for="tl-amt">Amount (tUSD)</label><input id="tl-amt" inputmode="decimal" placeholder="1000"></div>
+        <button class="btn" id="tl-dep" type="button" data-perps>Deposit</button>
+        <button class="btn ghost" id="tl-wd" type="button" data-perps>Withdraw</button>
+      </div>
+      <p class="log" id="tl-log"></p>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap"><p>Bellguard Perps is a testnet prototype on Elysium. Test tokens have no value. Leveraged trading can lose your whole collateral. Company names and logos are trademarks of their owners and identify each market only. Updates: <a href="https://x.com/Bellguardapp">@Bellguardapp on X</a>.</p></div>
+</footer>
+
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="perps-config.js"></script>
+<script type="module" src="trade.js"></script>
+</body>
+</html>

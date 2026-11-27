@@ -9,6 +9,7 @@ const UPSTREAM = {
   4663: process.env.RPC_MAINNET || "https://rpc.mainnet.chain.robinhood.com",
   46630: process.env.RPC_TESTNET || "https://rpc.testnet.chain.robinhood.com",
   99901: process.env.RPC_ELYSIUM || "https://rpc.elysium.kinetiq.xyz",
+  99801: process.env.RPC_ELYSIUM_TESTNET || "https://testnet-rpc.elysium.kinetiq.xyz",
 };
 
 const ALLOWED = new Set([
