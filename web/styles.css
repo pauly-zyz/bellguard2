@@ -592,3 +592,5 @@ footer code { overflow-wrap: anywhere; }
 .t-order { min-width: 0; }
 .t-order .kv { grid-template-columns: max-content minmax(0, 1fr); }
 .t-order .kv dd { overflow-wrap: anywhere; }
+.t-pay { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: var(--step--1); }
+.t-conv { font: 0.72rem var(--font-data); color: var(--brass); line-height: 1.5; }

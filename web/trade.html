@@ -111,10 +111,18 @@
         <button type="button" class="t-long on" id="t-long">Long</button>
         <button type="button" class="t-short" id="t-short">Short</button>
       </div>
+      <div class="t-pay" id="t-pay-row">
+        <span class="muted">Pay with</span>
+        <div class="seg" id="t-pay" role="group" aria-label="Pay with">
+          <button type="button" data-pay="USDC" class="on">USDC</button>
+          <button type="button" data-pay="HYPE">HYPE</button>
+        </div>
+      </div>
       <div class="field">
-        <label for="t-collateral">Collateral (<span data-sym>USDC</span>)</label>
+        <label for="t-collateral"><span id="t-col-label">Collateral (<span data-sym>USDC</span>)</span></label>
         <input id="t-collateral" inputmode="decimal" placeholder="100" value="100">
         <span class="muted t-bal" id="t-bal"></span>
+        <span class="t-conv" id="t-conv" hidden></span>
       </div>
       <div class="field">
         <label for="t-lev">Leverage <b id="t-lev-v">2x</b></label>

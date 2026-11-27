@@ -25,6 +25,13 @@ vault. Built for stocks, whose prices stop over the weekend. Target: **Elysium m
 4. **Weekend borrow ×3.** Borrow fees accrue three times faster over closures. LPs carry the
    reopen gap and are paid for it.
 
+## Paying with HYPE
+
+The Trade page can take native HYPE instead of USDC. The wallet first swaps HYPE to USDC on
+Uniswap v4 (Universal Router `0xA13f7611115752DEB2B13813BDDE16A5073e4b45`, native HYPE/USDC
+0.3% pool without hooks, at most 1.5% slippage), then opens the position with exactly the USDC
+the swap returned. Positions stay USDC-collateralised and pay out in USDC.
+
 ## Risk limits
 
 - **Owner pause** (`setPaused`) stops opening, closing, liquidating and trimming; adding

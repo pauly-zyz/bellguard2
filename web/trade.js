@@ -1,6 +1,7 @@
-// Bellguard Perps: long or short stock prices on Elysium testnet. Uses viem from jsDelivr.
+// Bellguard Perps: long or short stock prices on Elysium. Uses viem from jsDelivr.
 import {
   createPublicClient, createWalletClient, custom, http, fallback, parseAbi, formatUnits, parseUnits, defineChain, maxUint256,
+  encodeAbiParameters, encodePacked, keccak256,
 } from "https://cdn.jsdelivr.net/npm/viem@2.21.54/+esm";
 
 const P = window.BELLGUARD_PERPS;
@@ -77,6 +78,9 @@ const markets = P.markets.map((m, i) => ({ ...m, market: D ? D.markets.find((x) 
 let sel = 0;
 let isLong = true;
 let onChainPreClose = null;
+let payWith = "USDC";          // or the swap token (HYPE)
+let hypePrice = null;          // USDC per HYPE from the swap pool
+let hypeBal = null, usdcBal = null;
 let enginePaused = false;
 
 // ---------------------------------------------------------------- helpers
@@ -286,10 +290,68 @@ function renderSpark(fit) {
   $("t-chart-foot").textContent = pts.length + " Chainlink price updates since " + from + " · times in your time zone · candles only cover periods with updates";
 }
 
+// ---------------------------------------------------------------- pay with HYPE (swap to USDC first)
+
+const SW = P.swap || null;
+const POOL_KEY_T = { type: "tuple", components: [{ name: "currency0", type: "address" }, { name: "currency1", type: "address" }, { name: "fee", type: "uint24" }, { name: "tickSpacing", type: "int24" }, { name: "hooks", type: "address" }] };
+const swapFee = () => (SW ? SW.poolKey.fee / 1e6 : 0);
+
+/** HYPE price from the pool's current sqrtPrice (Uniswap v4 slot0 via extsload). */
+async function loadHypePrice() {
+  if (!SW || !D) return;
+  try {
+    const id = keccak256(encodeAbiParameters([POOL_KEY_T], [SW.poolKey]));
+    const slot = keccak256(encodePacked(["bytes32", "uint256"], [id, 6n]));
+    const word = await perps.readContract({ address: SW.poolManager, abi: parseAbi(["function extsload(bytes32) view returns (bytes32)"]), functionName: "extsload", args: [slot] });
+    const sqrtP = BigInt(word) & ((1n << 160n) - 1n);
+    const r = Number(sqrtP) / 2 ** 96;
+    hypePrice = r * r * 1e12; // USDC (6 dec) per HYPE (18 dec)
+    renderSummary();
+  } catch { /* keep last price */ }
+}
+
+/** Collateral in USDC that the entered amount buys (after the pool fee; before price impact). */
+function collateralUsd() {
+  const v = Number($("t-collateral").value || 0);
+  if (payWith === "USDC") return v;
+  return hypePrice ? v * hypePrice * (1 - swapFee()) : 0;
+}
+
+/** Universal Router call: swap exactly `amountIn` native HYPE for at least `minOut` USDC. */
+function swapCall(amountIn, minOut) {
+  const k = SW.poolKey;
+  const swap = encodeAbiParameters([{ type: "tuple", components: [POOL_KEY_T, { name: "zeroForOne", type: "bool" }, { name: "amountIn", type: "uint128" }, { name: "amountOutMinimum", type: "uint128" }, { name: "hookData", type: "bytes" }] }], [[k, true, amountIn, minOut, "0x"]]);
+  const settle = encodeAbiParameters([{ type: "address" }, { type: "uint256" }], [k.currency0, amountIn]);
+  const take = encodeAbiParameters([{ type: "address" }, { type: "uint256" }], [k.currency1, minOut]);
+  // V4_SWAP: SWAP_EXACT_IN_SINGLE, SETTLE_ALL, TAKE_ALL
+  const input = encodeAbiParameters([{ type: "bytes" }, { type: "bytes[]" }], [encodePacked(["uint8", "uint8", "uint8"], [0x06, 0x0c, 0x0f]), [swap, settle, take]]);
+  return {
+    address: SW.router, value: amountIn, functionName: "execute",
+    abi: parseAbi(["function execute(bytes commands, bytes[] inputs, uint256 deadline) payable"]),
+    args: ["0x10", [input], BigInt(Math.floor(Date.now() / 1000) + 600)],
+  };
+}
+
+function setPay(kind) {
+  payWith = kind;
+  document.querySelectorAll("#t-pay button").forEach((b) => b.classList.toggle("on", b.dataset.pay === kind));
+  $("t-col-label").innerHTML = kind === "USDC" ? "Collateral (" + SYM + ")" : "Pay (" + SW.symbol + ")";
+  $("t-collateral").value = kind === "USDC" ? "100" : "2";
+  showBalance();
+  renderSummary();
+}
+
+function showBalance() {
+  const el = $("t-bal");
+  if (!account) { el.textContent = ""; return; }
+  if (payWith === "USDC") el.textContent = usdcBal == null ? "" : "Wallet: " + usd(tok(usdcBal)).replace("$", "") + " " + SYM;
+  else el.textContent = hypeBal == null ? "" : "Wallet: " + Number(formatUnits(hypeBal, 18)).toLocaleString("en-US", { maximumFractionDigits: 4 }) + " " + SW.symbol + " (keep ~" + SW.gasReserve + " for gas)";
+}
+
 /** Order maths, mirroring PerpEngine.openPosition and closePosition. */
 function orderPlan() {
   const m = markets[sel];
-  const C = Number($("t-collateral").value || 0);
+  const C = collateralUsd();
   const L = Math.min(Number($("t-lev").value), maxLev());
   const f = params.openFeeBps / 1e4, sp = params.spreadBps / 1e4, cf = params.closeFeeBps / 1e4, mm = params.maintenanceBps / 1e4;
   const dir = isLong ? 1 : -1;
@@ -323,7 +385,8 @@ function orderPlan() {
 function previewRows(o) {
   return [
     ["Side", "<b class='" + (isLong ? "gain" : "loss") + "'>" + (isLong ? "Long" : "Short") + " " + o.m.symbol + " " + o.L + "x</b>"],
-    ["You pay", usd(o.C) + " " + SYM],
+    ["You pay", payWith === "USDC" ? usd(o.C) + " " + SYM
+      : Number($("t-collateral").value || 0) + " " + SW.symbol + " <span class='muted'>≈ " + usd(o.C) + " " + SYM + " after swap</span>"],
     ["Position size", usd(o.size)],
     ["Entry price", px(o.entry)],
     ["Break-even price", px(o.breakEven)],
@@ -370,6 +433,11 @@ function renderSummary() {
   const o = orderPlan();
   $("t-sum").innerHTML = previewRows(o).slice(2).map(([k, v]) => "<dt>" + k + "</dt><dd>" + v + "</dd>").join("");
   $("t-scen").innerHTML = scenarioHtml(o);
+  const conv = $("t-conv");
+  conv.hidden = payWith === "USDC";
+  if (payWith !== "USDC") conv.textContent = hypePrice
+    ? "≈ " + usd(o.C) + " " + SYM + " collateral · 1 " + SW.symbol + " ≈ " + usd(hypePrice) + " · swapped on Uniswap (" + (swapFee() * 100).toFixed(1) + "% pool fee, max " + SW.slippageBps / 100 + "% slippage)"
+    : "Loading " + SW.symbol + " price…";
   drawPreviewLines(o);
   const st = marketState();
   const btn = $("t-submit");
@@ -450,7 +518,8 @@ function submit() {
   const o = orderPlan();
   if (!(o.C > 0) || !o.entry) { log("t-olog", "Enter a collateral amount.", true); return; }
   const st = marketState();
-  $("tc-body").innerHTML = "<dl class='kv'>" + previewRows(o).map(([k, v]) => "<dt>" + k + "</dt><dd>" + v + "</dd>").join("") + "</dl>"
+  const swapNote = payWith === "USDC" ? "" : "<p class='note' style='margin:0 0 8px'><b>Two steps:</b> your wallet first swaps " + Number($("t-collateral").value || 0) + " " + SW.symbol + " to " + SYM + " on Uniswap, then opens the position with the " + SYM + " received. The final size follows the amount the swap returns.</p>";
+  $("tc-body").innerHTML = swapNote + "<dl class='kv'>" + previewRows(o).map(([k, v]) => "<dt>" + k + "</dt><dd>" + v + "</dd>").join("") + "</dl>"
     + "<div class='t-scen'>" + scenarioHtml(o) + "</div>"
     + "<p class='note' style='margin:0'>Fills at the oracle price ± " + params.spreadBps / 100 + "% spread, and won't fill more than 0.5% away from the entry shown." + (st.until && !st.closed ? " Next market close: " + fmtWhen(st.until) + "; trading pauses until reopen." : "") + "</p>";
   const ok = $("tc-ok");
@@ -465,15 +534,32 @@ async function openConfirmed() {
   const o = orderPlan();
   try {
     if (!(o.C > 0) || !o.entry) throw new Error("Enter a collateral amount.");
-    const collateral = parseUnits(String(o.C), 6);
-    const size = BigInt(Math.floor(o.size * 1e6));
-    const bal = await perps.readContract({ address: D.collateral, abi: ABI.erc20, functionName: "balanceOf", args: [account] });
-    if (bal < collateral) throw new Error("Not enough " + SYM + " in your wallet." + (D.testToken ? " Use the faucet button below." : ""));
+    let collateral, size;
+    if (payWith === "USDC") {
+      collateral = parseUnits(String(o.C), 6);
+      size = BigInt(Math.floor(o.size * 1e6));
+      const bal = await perps.readContract({ address: D.collateral, abi: ABI.erc20, functionName: "balanceOf", args: [account] });
+      if (bal < collateral) throw new Error("Not enough " + SYM + " in your wallet." + (D.testToken ? " Use the faucet button below." : ""));
+    } else {
+      // 1) swap HYPE -> USDC, 2) open with exactly what the swap returned, same leverage
+      const amountIn = parseUnits($("t-collateral").value || "0", 18);
+      const have = await perps.getBalance({ address: account });
+      if (have < amountIn + parseUnits(SW.gasReserve, 18)) throw new Error("Not enough " + SW.symbol + " (keep about " + SW.gasReserve + " " + SW.symbol + " for gas).");
+      const minOut = BigInt(Math.floor(o.C * (1 - SW.slippageBps / 1e4) * 1e6));
+      const before = await perps.readContract({ address: D.collateral, abi: ABI.erc20, functionName: "balanceOf", args: [account] });
+      await send("t-olog", "Swap " + SW.symbol + " to " + SYM, swapCall(amountIn, minOut));
+      const after = await perps.readContract({ address: D.collateral, abi: ABI.erc20, functionName: "balanceOf", args: [account] });
+      collateral = after - before;
+      if (collateral <= 0n) throw new Error("The swap returned no " + SYM + ".");
+      const f = params.openFeeBps / 1e4;
+      size = BigInt(Math.floor(tok(collateral) * o.L / (1 + o.L * f) * 1e6));
+      log("t-olog", "Swapped to " + usd(tok(collateral)) + " " + SYM + ". Opening the position…");
+    }
     await ensureAllowance("t-olog", D.engine, collateral);
     // 0.5% slippage bound on the fill
     const acceptable = BigInt(Math.round(o.entry * (isLong ? 1.005 : 0.995) * 1e8));
     await send("t-olog", (isLong ? "Long " : "Short ") + o.m.symbol, { address: D.engine, abi: ABI.engine, functionName: "openPosition", args: [BigInt(o.m.market), isLong, collateral, size, acceptable] });
-    log("t-olog", "Position opened: " + (isLong ? "long " : "short ") + o.m.symbol + " " + usd(o.size) + ".");
+    log("t-olog", "Position opened: " + (isLong ? "long " : "short ") + o.m.symbol + " " + usd(tok(size)) + ".");
     refreshAccount();
   } catch (e) { log("t-olog", (e.shortMessage || e.message).split("\n")[0], true); }
 }
@@ -559,7 +645,9 @@ async function loadVault() {
     ]);
     const value = await perps.readContract({ address: D.vault, abi: ABI.vault, functionName: "convertToAssets", args: [shares] });
     $("tl-mine").textContent = usd(tok(value)) + " (withdrawable " + usd(tok(maxW)) + ")";
-    $("t-bal").textContent = "Wallet: " + usd(tok(bal)).replace("$", "") + " " + SYM;
+    usdcBal = bal;
+    hypeBal = await perps.getBalance({ address: account }).catch(() => null);
+    showBalance();
   }
 }
 
@@ -688,6 +776,8 @@ $("t-tf").addEventListener("click", (e) => {
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (chart) { chart.remove(); chart = null; series = null; seriesType = null; renderSpark(true); } });
 $("t-collateral").addEventListener("input", renderSummary);
 $("t-submit").addEventListener("click", submit);
+$("t-pay-row").hidden = !(SW && D && !D.testToken);
+$("t-pay").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setPay(b.dataset.pay); });
 $("tc-ok").addEventListener("click", openConfirmed);
 $("tc-cancel").addEventListener("click", () => { $("t-confirm").hidden = true; });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("t-confirm").hidden = true; });
@@ -714,5 +804,7 @@ renderList(); renderHead(); renderSummary(); renderSpark();
 loadPrices();
 refreshAccount();
 setInterval(loadPrices, 60_000);
+loadHypePrice();
+setInterval(loadHypePrice, 30_000);
 setInterval(refreshAccount, 30_000);
 setInterval(() => { renderHead(); renderSummary(); }, 15_000);

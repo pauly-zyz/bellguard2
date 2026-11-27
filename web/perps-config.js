@@ -10,6 +10,16 @@ window.BELLGUARD_PERPS = {
     explorer: "https://elysium.kinetiq.xyz",
   },
   collateralSymbol: "USDC",
+  // Pay with native HYPE: swapped to USDC through Uniswap v4 (Universal Router) before opening.
+  // Pool: native HYPE / USDC, 0.3%, no hooks (the deepest hookless HYPE/USDC pool, checked 2026-11-27).
+  swap: {
+    symbol: "HYPE",
+    router: "0xA13f7611115752DEB2B13813BDDE16A5073e4b45",
+    poolManager: "0xE2e105d3F7209A9DA11f83cCf3E7398a753823F1",
+    poolKey: { currency0: "0x0000000000000000000000000000000000000000", currency1: "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65", fee: 3000, tickSpacing: 60, hooks: "0x0000000000000000000000000000000000000000" },
+    slippageBps: 150,
+    gasReserve: "0.005",
+  },
   owner: "0x4b08C1DbE28e4e260037299e8cb4B34c7FBe2195",
   // Where preview prices and charts come from (Chainlink feeds).
   source: { chainId: 4663, rpc: "https://rpc.mainnet.chain.robinhood.com", relay: "/api/rpc?chain=4663", multicall3: "0xcA11bde05977b3631167028862bE2a173976CA11" },
