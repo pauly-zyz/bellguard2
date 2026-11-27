@@ -380,3 +380,4 @@ input:focus, select:focus { outline: none; border-color: var(--brass); box-shado
 @media (max-width: 560px) { .ca code { white-space: normal; overflow-wrap: anywhere; flex-basis: 100%; } }
 footer code { overflow-wrap: anywhere; }
 .ca-label { flex-basis: 100%; }
+.ca-buy { padding: 9px 16px; }
