@@ -182,7 +182,7 @@ async function refresh() {
   } catch (e) {
     for (const id of fields) if ($(id).textContent === "Loading…") $(id).textContent = "Unavailable";
     $("v-log").dataset.readError = "1";
-    log("v-log", "Couldn't reach Robinhood Chain (" + (e.shortMessage || e.message).split("\n")[0] + "). Retrying in 10 seconds…", true);
+    log("v-log", "Couldn't reach the network (" + (e.shortMessage || e.message).split("\n")[0] + "). Retrying in 10 seconds…", true);
     scheduleRetry();
   }
 }
