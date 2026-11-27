@@ -576,3 +576,19 @@ footer code { overflow-wrap: anywhere; }
   .t-markets .t-list { grid-template-columns: none; }
   .t-chartbox { height: 340px; }
 }
+
+/* trade: position preview */
+.t-scen table { width: 100%; font-size: 0.74rem; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.t-scen th, .t-scen td { padding: 6px 7px; text-align: right; white-space: nowrap; }
+.t-scen th { font-size: 0.62rem; }
+.t-scen td small { display: block; font-size: 0.66rem; opacity: 0.85; }
+.t-scen-note { font-size: 0.7rem; color: var(--muted); margin: 6px 0 0; }
+.t-confirm { width: min(520px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; }
+.t-confirm .kv { font-size: 0.82rem; }
+#tc-ok.short { background: linear-gradient(180deg, #ff9a83, var(--closed)); color: #2a0a03; }
+.t-scen table { table-layout: fixed; }
+.t-scen th, .t-scen td { white-space: normal; padding: 6px 4px; font-size: 0.7rem; overflow-wrap: anywhere; }
+.t-scen th:first-child, .t-scen td:first-child { width: 22%; text-align: left; padding-left: 8px; }
+.t-order { min-width: 0; }
+.t-order .kv { grid-template-columns: max-content minmax(0, 1fr); }
+.t-order .kv dd { overflow-wrap: anywhere; }

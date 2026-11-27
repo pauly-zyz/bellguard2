@@ -247,6 +247,13 @@ function toBars(pts) {
   return out;
 }
 
+/** Keep the order's entry and liquidation prices inside the visible price range. */
+function withPreview(original) {
+  const r = original();
+  if (!r || !r.priceRange || !previewRange) return r;
+  return { ...r, priceRange: { minValue: Math.min(r.priceRange.minValue, ...previewRange), maxValue: Math.max(r.priceRange.maxValue, ...previewRange) } };
+}
+
 function renderSpark(fit) {
   const m = markets[sel];
   const msg = $("t-chart-msg");
@@ -260,9 +267,10 @@ function renderSpark(fit) {
     if (series) chart.removeSeries(series);
     const gain = cssVar("--chart-gain") || "#4fd29a", loss = cssVar("--chart-loss") || "#ff7d61";
     series = want === "candle"
-      ? chart.addCandlestickSeries({ upColor: gain, downColor: loss, borderUpColor: gain, borderDownColor: loss, wickUpColor: gain, wickDownColor: loss, priceLineVisible: true })
-      : chart.addAreaSeries({ lineColor: cssVar("--brass") || "#e2b052", topColor: "rgba(226,176,82,0.28)", bottomColor: "rgba(226,176,82,0)", lineWidth: 2, priceLineVisible: true });
+      ? chart.addCandlestickSeries({ upColor: gain, downColor: loss, borderUpColor: gain, borderDownColor: loss, wickUpColor: gain, wickDownColor: loss, priceLineVisible: true, autoscaleInfoProvider: withPreview })
+      : chart.addAreaSeries({ lineColor: cssVar("--brass") || "#e2b052", topColor: "rgba(226,176,82,0.28)", bottomColor: "rgba(226,176,82,0)", lineWidth: 2, priceLineVisible: true, autoscaleInfoProvider: withPreview });
     seriesType = want;
+    previewLines = []; // they belonged to the removed series
     fit = true;
   }
   lastBars = toBars(pts);
@@ -273,26 +281,84 @@ function renderSpark(fit) {
     else chart.timeScale().fitContent();
   }
   showOhlc(lastBars[lastBars.length - 1]);
+  drawPreviewLines(orderPlan());
   const from = new Date(pts[0].t * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
   $("t-chart-foot").textContent = pts.length + " Chainlink price updates since " + from + " · times in your time zone · candles only cover periods with updates";
 }
 
-/** Order maths, mirroring PerpEngine.openPosition. */
+/** Order maths, mirroring PerpEngine.openPosition and closePosition. */
 function orderPlan() {
   const m = markets[sel];
   const C = Number($("t-collateral").value || 0);
   const L = Math.min(Number($("t-lev").value), maxLev());
   const f = params.openFeeBps / 1e4, sp = params.spreadBps / 1e4, cf = params.closeFeeBps / 1e4, mm = params.maintenanceBps / 1e4;
+  const dir = isLong ? 1 : -1;
   const size = C * L / (1 + L * f);           // net * L = size, net = C - size * f
   const net = C - size * f;
   const entry = m.price ? m.price * (isLong ? 1 + sp : 1 - sp) : null;
-  // liquidation when equity = size * mm, at the closing price (with spread)
-  let liq = null;
+  const maxProfit = net * params.maxProfitBps / 1e4;
+  // closing fills at the oracle price minus the spread for longs (plus for shorts)
+  const exitAt = (mid) => mid * (isLong ? 1 - sp : 1 + sp);
+  const midFor = (exit) => exit / (isLong ? 1 - sp : 1 + sp);
+  /** What you'd get back if you closed at oracle price `mid` (borrow fee excluded). */
+  const valueAt = (mid) => {
+    let pnl = size * dir * (exitAt(mid) - entry) / entry;
+    if (pnl > maxProfit) pnl = maxProfit;
+    const equity = net + pnl - size * cf;
+    return { pnl: equity - C, equity, liquidated: equity < size * mm, capped: pnl >= maxProfit };
+  };
+  let liq = null, breakEven = null;
   if (entry && size > 0) {
-    const exit = entry * (1 + (isLong ? 1 : -1) * (size * mm + size * cf - net) / size);
-    liq = isLong ? exit / (1 - sp) : exit / (1 + sp);
+    liq = midFor(entry * (1 + dir * (size * mm + size * cf - net) / size));   // equity = maintenance
+    breakEven = midFor(entry * (1 + dir * (C - net + size * cf) / size));    // equity = what you paid
   }
-  return { m, C, L, size, net, entry, liq, fee: size * f, borrowDay: size * params.borrowBpsPerDay / 1e4, maxProfit: net * params.maxProfitBps / 1e4 };
+  return {
+    m, C, L, size, net, entry, liq, breakEven, valueAt, maxProfit,
+    fee: size * f, closeFee: size * cf, borrowDay: size * params.borrowBpsPerDay / 1e4,
+    liqDist: liq && m.price ? (liq / m.price - 1) * 100 : null,
+  };
+}
+
+/** Rows for the preview: same numbers in the side panel and the confirm dialog. */
+function previewRows(o) {
+  return [
+    ["Side", "<b class='" + (isLong ? "gain" : "loss") + "'>" + (isLong ? "Long" : "Short") + " " + o.m.symbol + " " + o.L + "x</b>"],
+    ["You pay", usd(o.C) + " " + SYM],
+    ["Position size", usd(o.size)],
+    ["Entry price", px(o.entry)],
+    ["Break-even price", px(o.breakEven)],
+    ["Liquidation price", o.liq && o.liq > 0 ? px(o.liq) + " <span class='muted'>(" + (o.liqDist >= 0 ? "+" : "") + o.liqDist.toFixed(1) + "%)</span>" : "–"],
+    ["Fees", usd(o.fee + o.closeFee) + " <span class='muted'>(open + close)</span>"],
+    ["Borrow fee", usd(o.borrowDay) + "/day <span class='muted'>(×" + params.closedBorrowMultiplier + " weekends)</span>"],
+    ["Max profit", usd(o.maxProfit)],
+  ];
+}
+
+function scenarioHtml(o) {
+  if (!o.entry || !(o.size > 0)) return "";
+  const moves = [-10, -5, 5, 10];
+  return "<table><thead><tr><th>Move</th>" + moves.map((x) => "<th>" + (x > 0 ? "+" : "") + x + "%</th>").join("") + "</tr></thead><tbody>"
+    + "<tr><td>Price</td>" + moves.map((x) => "<td>" + px(o.m.price * (1 + x / 100)) + "</td>").join("") + "</tr>"
+    + "<tr><td>Your PnL</td>" + moves.map((x) => {
+      const v = o.valueAt(o.m.price * (1 + x / 100));
+      if (v.liquidated) return "<td class='loss'>Liquidated</td>";
+      return "<td class='" + (v.pnl >= 0 ? "gain" : "loss") + "'>" + usd(v.pnl, Math.abs(v.pnl) >= 100 ? 0 : 2) + "<small>" + (v.pnl / o.C * 100 >= 0 ? "+" : "") + (v.pnl / o.C * 100).toFixed(1) + "%</small></td>";
+    }).join("") + "</tr></tbody></table><p class='t-scen-note'>After open and close fees, before borrow fees. Liquidation at " + params.maintenanceBps / 100 + "% margin left.</p>";
+}
+
+// Entry and liquidation lines on the chart for the order being previewed.
+let previewLines = [];
+let previewRange = null; // prices the chart scale must include (entry, liquidation)
+function drawPreviewLines(o) {
+  if (!series) return;
+  for (const l of previewLines) series.removePriceLine(l);
+  previewLines = [];
+  previewRange = null;
+  if (!o.entry || !(o.size > 0)) return;
+  previewRange = [o.entry, o.liq > 0 ? o.liq : o.entry];
+  const LS = window.LightweightCharts && window.LightweightCharts.LineStyle;
+  previewLines.push(series.createPriceLine({ price: o.entry, color: cssVar("--brass") || "#e2b052", lineWidth: 1, lineStyle: LS ? LS.Dashed : 2, axisLabelVisible: true, title: "Entry" }));
+  if (o.liq > 0) previewLines.push(series.createPriceLine({ price: o.liq, color: cssVar("--closed") || "#ff7d61", lineWidth: 1, lineStyle: LS ? LS.Dashed : 2, axisLabelVisible: true, title: "Liq." }));
 }
 
 function renderSummary() {
@@ -302,14 +368,9 @@ function renderSummary() {
   if (Number(lev.value) > cap) lev.value = String(cap);
   $("t-lev-v").textContent = lev.value + "x" + (cap < params.maxLeverage ? " (max " + cap + "x before the close)" : "");
   const o = orderPlan();
-  $("t-sum").innerHTML = [
-    ["Position size", usd(o.size)],
-    ["Entry price", px(o.entry)],
-    ["Liquidation price", o.liq && o.liq > 0 ? px(o.liq) : "–"],
-    ["Open fee", usd(o.fee)],
-    ["Borrow fee", usd(o.borrowDay) + " / day"],
-    ["Max profit", usd(o.maxProfit)],
-  ].map(([k, v]) => "<dt>" + k + "</dt><dd>" + v + "</dd>").join("");
+  $("t-sum").innerHTML = previewRows(o).slice(2).map(([k, v]) => "<dt>" + k + "</dt><dd>" + v + "</dd>").join("");
+  $("t-scen").innerHTML = scenarioHtml(o);
+  drawPreviewLines(o);
   const st = marketState();
   const btn = $("t-submit");
   btn.classList.toggle("short", !isLong);
@@ -382,9 +443,25 @@ async function ensureAllowance(logId, spender, amount) {
 
 // ---------------------------------------------------------------- trading
 
-async function submit() {
+/** Show the preview dialog; the transaction is sent only after Confirm. */
+function submit() {
   if (!account) return connect();
   if (!D) return;
+  const o = orderPlan();
+  if (!(o.C > 0) || !o.entry) { log("t-olog", "Enter a collateral amount.", true); return; }
+  const st = marketState();
+  $("tc-body").innerHTML = "<dl class='kv'>" + previewRows(o).map(([k, v]) => "<dt>" + k + "</dt><dd>" + v + "</dd>").join("") + "</dl>"
+    + "<div class='t-scen'>" + scenarioHtml(o) + "</div>"
+    + "<p class='note' style='margin:0'>Fills at the oracle price ± " + params.spreadBps / 100 + "% spread, and won't fill more than 0.5% away from the entry shown." + (st.until && !st.closed ? " Next market close: " + fmtWhen(st.until) + "; trading pauses until reopen." : "") + "</p>";
+  const ok = $("tc-ok");
+  ok.textContent = "Confirm " + (isLong ? "long " : "short ") + o.m.symbol;
+  ok.classList.toggle("short", !isLong);
+  $("t-confirm").hidden = false;
+  ok.focus();
+}
+
+async function openConfirmed() {
+  $("t-confirm").hidden = true;
   const o = orderPlan();
   try {
     if (!(o.C > 0) || !o.entry) throw new Error("Enter a collateral amount.");
@@ -611,6 +688,9 @@ $("t-tf").addEventListener("click", (e) => {
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (chart) { chart.remove(); chart = null; series = null; seriesType = null; renderSpark(true); } });
 $("t-collateral").addEventListener("input", renderSummary);
 $("t-submit").addEventListener("click", submit);
+$("tc-ok").addEventListener("click", openConfirmed);
+$("tc-cancel").addEventListener("click", () => { $("t-confirm").hidden = true; });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("t-confirm").hidden = true; });
 $("t-connect").addEventListener("click", connect);
 $("t-faucet").addEventListener("click", faucet);
 $("tl-dep").addEventListener("click", () => vaultAction(true));

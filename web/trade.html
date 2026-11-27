@@ -41,6 +41,17 @@
   </div>
 </header>
 
+<div class="picker-backdrop" id="t-confirm" hidden>
+  <div class="picker t-confirm" role="dialog" aria-modal="true" aria-labelledby="tc-title">
+    <h2 id="tc-title" style="font-size:var(--step-1)">Preview position</h2>
+    <div id="tc-body"></div>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn ghost" id="tc-cancel" type="button">Cancel</button>
+      <button class="btn" id="tc-ok" type="button">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <div class="picker-backdrop" id="wallet-picker" hidden>
   <div class="picker" role="dialog" aria-modal="true" aria-labelledby="wp-h">
     <h2 id="wp-h" style="font-size:var(--step-1)">Choose a wallet</h2>
@@ -111,6 +122,7 @@
         <div class="t-ticks"><span>1x</span><span>2x</span><span>3x</span><span>4x</span><span>5x</span></div>
       </div>
       <dl class="kv t-sum" id="t-sum"></dl>
+      <div class="t-scen" id="t-scen" aria-label="Profit and loss if the price moves"></div>
       <button class="btn big" id="t-submit" type="button">Connect wallet</button>
       <button class="btn ghost" id="t-faucet" type="button" hidden>Get 10,000 test tokens</button>
       <p class="log" id="t-olog"></p>
