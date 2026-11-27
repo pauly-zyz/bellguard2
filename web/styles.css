@@ -372,3 +372,10 @@ input:focus, select:focus { outline: none; border-color: var(--brass); box-shado
 .nav a.btn, .nav a.btn:hover { color: #1a1206; }
 :root[data-theme="light"] .btn:not(.ghost), :root[data-theme="light"] .nav a.btn { color: #fff; }
 @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .btn:not(.ghost), :root:not([data-theme="dark"]) .nav a.btn { color: #fff; } }
+
+/* official token address in the hero */
+.ca { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; margin-top: 22px; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--brass) 45%, var(--rule)); border-radius: 12px; background: color-mix(in srgb, var(--brass) 8%, var(--surface)); max-width: 680px; }
+.ca-label { font: 600 0.72rem var(--font-data); letter-spacing: 0.12em; text-transform: uppercase; color: var(--brass); }
+.ca code { font: 0.8rem var(--font-data); color: var(--ink); white-space: nowrap; flex: 1 1 auto; min-width: 0; }
+@media (max-width: 560px) { .ca code { white-space: normal; overflow-wrap: anywhere; flex-basis: 100%; } }
+footer code { overflow-wrap: anywhere; }
