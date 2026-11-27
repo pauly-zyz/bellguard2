@@ -141,7 +141,8 @@ function setDeployedUi() {
   $("liquidity").hidden = !(d && d.positionManager);
   const sel = $("pool-select");
   const pools = d && d.pools ? d.pools : [];
-  const shown = pools.map((p, i) => i).filter((i) => !poolLive || poolLive[i]);
+  // Until on-chain status is known, show only pools not marked pending in the config.
+  const shown = pools.map((p, i) => i).filter((i) => (poolLive ? poolLive[i] : !pools[i].pending));
   const sig = chainId + ":" + shown.join(",");
   if (sel.dataset.sig !== sig) {
     const keep = sel.value;
@@ -416,8 +417,8 @@ async function refreshStocksAdmin() {
   const v = await readMany(reads);
   pendingStocks = d.pools.map((p, i) => ({ p, live: v[2 * i][0] > 0n, registered: BigInt(v[2 * i + 1]) !== 0n })).filter((x) => !x.live);
   $("stocks-admin").hidden = pendingStocks.length === 0;
-  $("stocks-pending").innerHTML = pendingStocks.map((x) => "<li><span>" + x.p.symbol + " / USDG</span><span class='muted'>"
-    + (x.registered ? "Registered, pool not created" : "Not registered") + "</span></li>").join("");
+  $("stocks-pending").innerHTML = pendingStocks.map((x) => "<li" + (x.registered ? " class='done' title='Registered, pool not created yet'" : "") + ">" + x.p.symbol + "</li>").join("");
+  $("add-stocks").textContent = "Add " + pendingStocks.length + " stock" + (pendingStocks.length === 1 ? "" : "s");
 }
 
 async function addStocks() {

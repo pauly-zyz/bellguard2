@@ -73,10 +73,10 @@
       <p class="log" id="a-log"></p>
       <div id="stocks-admin" hidden>
         <h3>Stocks waiting to go live</h3>
-        <p class="muted">Each one takes two transactions from this wallet: register the stock with its Chainlink feed, then create its pool at the Chainlink price. Anyone can trade and add liquidity once the pool exists.</p>
-        <ul id="stocks-pending" class="positions"></ul>
-        <div class="row"><button class="btn" id="add-stocks" type="button">Add these stocks</button></div>
+        <p class="muted">Press the button and confirm in your wallet: one transaction per stock to register it with its Chainlink feed, then one transaction that creates all their pools at the Chainlink price.</p>
+        <div class="row"><button class="btn big" id="add-stocks" type="button">Add these stocks</button></div>
         <p class="log" id="st-log"></p>
+        <ul id="stocks-pending" class="chips"></ul>
       </div>
     </section>
 
