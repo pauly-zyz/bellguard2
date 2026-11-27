@@ -131,7 +131,8 @@ async function loadPrices() {
   }
 }
 
-/** Last ~40 Chainlink rounds for the chart, from the source chain. */
+/** Chainlink price history for the chart: the last HISTORY rounds from the source chain. */
+const HISTORY = 600;
 async function loadSpark(i) {
   const m = markets[i];
   if (m.spark || m.sparkLoading) { renderSpark(); return; }
@@ -139,12 +140,17 @@ async function loadSpark(i) {
   try {
     let round = m.round;
     if (round == null) round = (await source.readContract({ address: m.sourceFeed, abi: ABI.feed, functionName: "latestRoundData" }))[0];
-    const ids = []; for (let k = 39; k >= 0; k--) ids.push(round - BigInt(k));
-    const r = await source.multicall({ contracts: ids.map((id) => ({ address: m.sourceFeed, abi: ABI.feed, functionName: "getRoundData", args: [id] })), allowFailure: true });
-    m.spark = r.filter((x) => x.status === "success" && x.result[1] > 0n).map((x) => ({ t: Number(x.result[3]), p: Number(x.result[1]) / 1e8 }));
+    const ids = []; for (let k = HISTORY - 1; k >= 0; k--) if (round - BigInt(k) > 0n) ids.push(round - BigInt(k));
+    const pts = [];
+    for (let j = 0; j < ids.length; j += 150) {
+      const r = await source.multicall({ contracts: ids.slice(j, j + 150).map((id) => ({ address: m.sourceFeed, abi: ABI.feed, functionName: "getRoundData", args: [id] })), allowFailure: true });
+      for (const x of r) if (x.status === "success" && x.result[1] > 0n && x.result[3] > 0n) pts.push({ t: Number(x.result[3]), p: Number(x.result[1]) / 1e8 });
+    }
+    pts.sort((x, y) => x.t - y.t);
+    m.spark = pts;
   } catch { m.spark = []; }
   m.sparkLoading = false;
-  if (i === sel) { renderSpark(); renderHead(); }
+  if (i === sel) { renderSpark(true); renderHead(); }
 }
 
 // ---------------------------------------------------------------- rendering
@@ -163,11 +169,17 @@ function renderHead() {
   const pill = $("t-pill");
   pill.className = "pill " + (st.closed ? "closed" : "open");
   pill.textContent = st.closed ? "Market closed" : "Market open";
-  const first = m.spark && m.spark.length ? m.spark[0].p : null;
+  // 24h change from the chart history
+  let first = null;
+  if (m.spark && m.spark.length) {
+    const cut = Date.now() / 1000 - 86400;
+    const before = m.spark.filter((x) => x.t <= cut);
+    first = (before.length ? before[before.length - 1] : m.spark[0]).p;
+  }
   const ch = first && m.price ? (m.price / first - 1) * 100 : null;
   $("t-head").innerHTML = logoHtml(m, "lg")
     + "<div class='who'><span class='tk'>" + esc(m.symbol) + "<span class='muted'> / USD</span></span><span class='nm'>" + esc(m.name) + (m.type ? " · " + m.type : "") + "</span></div>"
-    + "<div class='px'><b>" + px(m.price) + "</b><span>" + (ch == null ? "" : "<em class='" + (ch >= 0 ? "gain" : "loss") + "'>" + (ch >= 0 ? "▲ +" : "▼ ") + ch.toFixed(2) + "%</em> · ") + "Chainlink " + ago(m.updated) + "</span></div>";
+    + "<div class='px'><b>" + px(m.price) + "</b><span>" + (ch == null ? "" : "<em class='" + (ch >= 0 ? "gain" : "loss") + "'>" + (ch >= 0 ? "▲ +" : "▼ ") + ch.toFixed(2) + "% 24h</em> · ") + "Chainlink " + ago(m.updated) + "</span></div>";
   const rows = [
     st.closed
       ? ["closed", "Trading paused", "The stock market is closed, so prices are frozen. Trading resumes after reopen (" + fmtWhen(st.until) + ") with a fresh price."]
@@ -180,25 +192,89 @@ function renderHead() {
   $("t-bell").innerHTML = "<h3>Bell mode</h3><ul>" + rows.map(([k, t, d]) => "<li class='" + k + "'><b>" + t + "</b><span>" + d + "</span></li>").join("") + "</ul>";
 }
 
-function renderSpark() {
+// ---------------------------------------------------------------- chart (TradingView Lightweight Charts)
+
+let chart = null, series = null, seriesType = null;
+let chartType = "candle";
+let tf = 3600;
+let lastBars = [];
+const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+function ensureChart() {
+  if (chart || !window.LightweightCharts) return !!chart;
+  const host = $("t-chart");
+  chart = window.LightweightCharts.createChart(host, {
+    autoSize: true,
+    layout: { background: { type: "solid", color: "transparent" }, textColor: cssVar("--muted") || "#94a3b8", fontFamily: "IBM Plex Mono, ui-monospace, monospace", fontSize: 11 },
+    grid: { vertLines: { color: cssVar("--grid") || "rgba(148,163,184,0.06)" }, horzLines: { color: cssVar("--grid") || "rgba(148,163,184,0.06)" } },
+    rightPriceScale: { borderColor: cssVar("--rule") || "#22314a", scaleMargins: { top: 0.12, bottom: 0.08 } },
+    timeScale: { borderColor: cssVar("--rule") || "#22314a", timeVisible: true, secondsVisible: false, rightOffset: 4 },
+    crosshair: { mode: 0 },
+    localization: { priceFormatter: (v) => "$" + v.toFixed(v < 10 ? 3 : 2) },
+  });
+  chart.subscribeCrosshairMove((param) => {
+    const d = param && param.time && series ? param.seriesData.get(series) : null;
+    showOhlc(d || lastBars[lastBars.length - 1]);
+  });
+  return true;
+}
+
+function showOhlc(d) {
+  const el = $("t-ohlc");
+  if (!d) { el.textContent = ""; return; }
+  if (d.open != null) {
+    const up = d.close >= d.open;
+    el.innerHTML = ["O", d.open, "H", d.high, "L", d.low, "C", d.close].map((v, i) => i % 2 ? "<b class='" + (up ? "gain" : "loss") + "'>" + v.toFixed(2) + "</b>" : "<span>" + v + "</span>").join(" ");
+  } else {
+    el.innerHTML = "<span>Price</span> <b>" + d.value.toFixed(2) + "</b>";
+  }
+}
+
+/** Group price updates into candles of `tf` seconds (only periods with updates, so weekends don't leave gaps). */
+function toBars(pts) {
+  if (chartType === "line") {
+    const out = [];
+    for (const x of pts) { const t = Math.floor(x.t / 60) * 60; if (out.length && out[out.length - 1].time === t) out[out.length - 1].value = x.p; else out.push({ time: t, value: x.p }); }
+    return out;
+  }
+  const out = [];
+  for (const x of pts) {
+    const t = Math.floor(x.t / tf) * tf;
+    const c = out[out.length - 1];
+    if (c && c.time === t) { c.high = Math.max(c.high, x.p); c.low = Math.min(c.low, x.p); c.close = x.p; }
+    else out.push({ time: t, open: c ? c.close : x.p, high: Math.max(x.p, c ? c.close : x.p), low: Math.min(x.p, c ? c.close : x.p), close: x.p });
+  }
+  return out;
+}
+
+function renderSpark(fit) {
   const m = markets[sel];
-  const host = $("t-spark");
+  const msg = $("t-chart-msg");
   const pts = (m.spark || []).slice();
-  if (m.price && pts.length && m.updated > pts[pts.length - 1].t) pts.push({ t: m.updated, p: m.price });
-  if (pts.length < 2) { host.innerHTML = "<p class='muted' style='margin:auto'>" + (m.sparkLoading ? "Loading chart…" : "No chart data") + "</p>"; return; }
-  const W = 640, H = 200, pad = 6;
-  const ps = pts.map((x) => x.p), lo = Math.min(...ps), hi = Math.max(...ps), span = hi - lo || hi * 0.01;
-  const t0 = pts[0].t, t1 = pts[pts.length - 1].t || t0 + 1;
-  const X = (t) => pad + (t - t0) / (t1 - t0 || 1) * (W - 2 * pad);
-  const Y = (p) => pad + (1 - (p - lo) / span) * (H - 2 * pad);
-  const line = pts.map((x, i) => (i ? "L" : "M") + X(x.t).toFixed(1) + " " + Y(x.p).toFixed(1)).join(" ");
-  const up = pts[pts.length - 1].p >= pts[0].p;
-  const c = up ? "var(--chart-gain)" : "var(--chart-loss)";
-  host.innerHTML = "<svg viewBox='0 0 " + W + " " + H + "' preserveAspectRatio='none'><defs><linearGradient id='sg' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='" + c + "' stop-opacity='0.28'/><stop offset='1' stop-color='" + c + "' stop-opacity='0'/></linearGradient></defs>"
-    + "<path d='" + line + " L" + X(t1).toFixed(1) + " " + H + " L" + X(t0).toFixed(1) + " " + H + " Z' fill='url(#sg)'/>"
-    + "<path d='" + line + "' fill='none' stroke='" + c + "' stroke-width='2' vector-effect='non-scaling-stroke'/></svg>"
-    + "<div class='t-spark-lbl'><span>" + px(hi) + "</span><span>" + px(lo) + "</span></div>"
-    + "<div class='t-spark-foot'>Last " + pts.length + " Chainlink updates · " + new Date(t0 * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + " – now</div>";
+  if (m.price && m.updated && (!pts.length || m.updated > pts[pts.length - 1].t)) pts.push({ t: m.updated, p: m.price });
+  if (pts.length < 2) { msg.hidden = false; msg.textContent = m.sparkLoading ? "Loading chart…" : "No chart data yet"; return; }
+  if (!ensureChart()) { msg.hidden = false; msg.textContent = "Chart library didn't load. Refresh to try again."; return; }
+  msg.hidden = true;
+  const want = chartType === "candle" ? "candle" : "line";
+  if (seriesType !== want) {
+    if (series) chart.removeSeries(series);
+    const gain = cssVar("--chart-gain") || "#4fd29a", loss = cssVar("--chart-loss") || "#ff7d61";
+    series = want === "candle"
+      ? chart.addCandlestickSeries({ upColor: gain, downColor: loss, borderUpColor: gain, borderDownColor: loss, wickUpColor: gain, wickDownColor: loss, priceLineVisible: true })
+      : chart.addAreaSeries({ lineColor: cssVar("--brass") || "#e2b052", topColor: "rgba(226,176,82,0.28)", bottomColor: "rgba(226,176,82,0)", lineWidth: 2, priceLineVisible: true });
+    seriesType = want;
+    fit = true;
+  }
+  lastBars = toBars(pts);
+  series.setData(lastBars);
+  if (fit) {
+    const n = lastBars.length;
+    if (chartType === "candle" && n > 120) chart.timeScale().setVisibleLogicalRange({ from: n - 120, to: n + 3 });
+    else chart.timeScale().fitContent();
+  }
+  showOhlc(lastBars[lastBars.length - 1]);
+  const from = new Date(pts[0].t * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  $("t-chart-foot").textContent = pts.length + " Chainlink price updates since " + from + " · times in your time zone · candles only cover periods with updates";
 }
 
 /** Order maths, mirroring PerpEngine.openPosition. */
@@ -246,7 +322,7 @@ function renderSummary() {
 
 function select(i) {
   sel = i;
-  renderList(); renderHead(); renderSummary(); renderSpark(); loadSpark(i);
+  renderList(); renderHead(); renderSummary(); renderSpark(true); loadSpark(i);
 }
 
 // ---------------------------------------------------------------- wallet
@@ -517,6 +593,22 @@ $("t-search").addEventListener("input", renderList);
 $("t-long").addEventListener("click", () => { isLong = true; $("t-long").classList.add("on"); $("t-short").classList.remove("on"); renderSummary(); });
 $("t-short").addEventListener("click", () => { isLong = false; $("t-short").classList.add("on"); $("t-long").classList.remove("on"); renderSummary(); });
 $("t-lev").addEventListener("input", renderSummary);
+$("t-type").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  chartType = b.dataset.type;
+  document.querySelectorAll("#t-type button").forEach((x) => x.classList.toggle("on", x === b));
+  $("t-tf").classList.toggle("dim", chartType === "line");
+  renderSpark(true);
+});
+$("t-tf").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  tf = Number(b.dataset.tf);
+  document.querySelectorAll("#t-tf button").forEach((x) => x.classList.toggle("on", x === b));
+  if (chartType !== "candle") { chartType = "candle"; document.querySelectorAll("#t-type button").forEach((x) => x.classList.toggle("on", x.dataset.type === "candle")); $("t-tf").classList.remove("dim"); }
+  renderSpark(true);
+});
+// Rebuild the chart with the right colours when the colour scheme changes.
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (chart) { chart.remove(); chart = null; series = null; seriesType = null; renderSpark(true); } });
 $("t-collateral").addEventListener("input", renderSummary);
 $("t-submit").addEventListener("click", submit);
 $("t-connect").addEventListener("click", connect);

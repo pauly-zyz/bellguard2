@@ -532,3 +532,47 @@ footer code { overflow-wrap: anywhere; }
 .tt-points div { display: grid; gap: 2px; padding: 14px 16px; border-left: 2px solid var(--brass); background: color-mix(in srgb, var(--surface) 60%, transparent); border-radius: 0 10px 10px 0; }
 .tt-points span { color: var(--muted); font-size: var(--step--1); }
 @media (max-width: 720px) { .tt-points { grid-template-columns: minmax(0, 1fr); } }
+
+/* trade: wide chart with candles */
+.trade-page .wrap { max-width: 1520px; }
+.trade-grid { grid-template-columns: 230px minmax(0, 1fr) 330px; }
+.t-toolbar { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; }
+.seg { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--bg); border: 1px solid var(--rule); }
+.seg button { border: 0; background: transparent; color: var(--muted); font: 600 0.78rem var(--font-data); padding: 6px 11px; border-radius: 7px; cursor: pointer; }
+.seg button:hover { color: var(--ink); }
+.seg button.on { background: var(--surface-2); color: var(--ink); box-shadow: 0 0 0 1px var(--rule) inset; }
+.seg.dim button.on { background: transparent; box-shadow: none; color: var(--muted); }
+.t-ohlc { margin-left: auto; font: 0.78rem var(--font-data); color: var(--muted); display: inline-flex; gap: 6px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.t-ohlc b { color: var(--ink); font-weight: 600; margin-right: 6px; }
+.t-chartbox { position: relative; height: 480px; border-radius: 12px; background: var(--bg); border: 1px solid var(--rule); overflow: hidden; }
+.t-chart-msg { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; max-width: none; }
+.t-chart-foot { font: 0.72rem var(--font-data); margin: -4px 0 0; max-width: none; }
+.t-bell ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.t-bell h3 { font-size: var(--step--1); color: var(--muted); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.t-spark { display: none; }
+@media (max-width: 1080px) { .trade-grid { grid-template-columns: minmax(0, 1fr) 330px; } }
+@media (max-width: 760px) {
+  .trade-grid { grid-template-columns: minmax(0, 1fr); }
+  .t-chartbox { height: 340px; }
+  .t-bell ul { grid-template-columns: minmax(0, 1fr); }
+  .t-ohlc { margin-left: 0; width: 100%; }
+}
+
+/* trade: markets as a horizontal strip so the chart gets the width */
+.trade-grid { grid-template-columns: minmax(0, 1fr) 340px; }
+.trade-grid .t-markets { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(160px, 220px) minmax(0, 1fr); align-items: center; gap: 12px 16px; padding: 12px 16px; }
+.t-markets .panel-head { gap: 10px; flex-wrap: nowrap; }
+.t-markets .t-list { display: flex; gap: 8px; overflow-x: auto; max-height: none; margin: 0; padding: 2px; scrollbar-width: thin; }
+.t-markets .t-item { flex: none; min-width: 168px; grid-template-columns: 30px minmax(0, 1fr) auto; padding: 7px 10px; border-color: var(--rule); background: var(--bg); }
+.t-markets .t-item .logo { width: 30px; height: 30px; }
+.t-chartbox { height: 500px; }
+@media (max-width: 1080px) {
+  .trade-grid .t-markets { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .t-markets .t-list { grid-column: 1 / -1; display: flex; }
+}
+@media (max-width: 760px) {
+  .trade-grid { grid-template-columns: minmax(0, 1fr); }
+  .trade-grid .t-markets { grid-template-columns: minmax(0, 1fr); }
+  .t-markets .t-list { grid-template-columns: none; }
+  .t-chartbox { height: 340px; }
+}

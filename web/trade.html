@@ -76,7 +76,21 @@
 
     <section class="panel t-chart" aria-labelledby="tc-h">
       <div class="t-head" id="t-head"></div>
-      <div class="t-spark" id="t-spark" aria-hidden="true"></div>
+      <div class="t-toolbar">
+        <div class="seg" id="t-type" role="group" aria-label="Chart type">
+          <button type="button" data-type="candle" class="on">Candles</button>
+          <button type="button" data-type="line">Line</button>
+        </div>
+        <div class="seg" id="t-tf" role="group" aria-label="Timeframe">
+          <button type="button" data-tf="900">15m</button>
+          <button type="button" data-tf="3600" class="on">1H</button>
+          <button type="button" data-tf="14400">4H</button>
+          <button type="button" data-tf="86400">1D</button>
+        </div>
+        <span class="t-ohlc" id="t-ohlc"></span>
+      </div>
+      <div class="t-chartbox" id="t-chart" aria-label="Price chart"><p class="t-chart-msg muted" id="t-chart-msg">Loading chart…</p></div>
+      <p class="t-chart-foot muted" id="t-chart-foot"></p>
       <div class="t-bell" id="t-bell"></div>
     </section>
 
@@ -146,6 +160,7 @@
 <script src="config.js"></script>
 <script src="data.js"></script>
 <script src="perps-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <script type="module" src="trade.js"></script>
 </body>
 </html>
