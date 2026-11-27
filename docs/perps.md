@@ -1,8 +1,8 @@
 # Bellguard Perps
 
 Long or short stock prices with leverage, settled in a USD stablecoin, against a liquidity
-vault. Built for stocks, whose prices stop over the weekend. Status: **testnet prototype on
-Elysium testnet (chain 99801), not audited.**
+vault. Built for stocks, whose prices stop over the weekend. Target: **Elysium mainnet
+(chain 99901), collateral USDC (`0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65`)**. Not audited.
 
 ## Contracts (`contracts/src/perps/`)
 
@@ -27,6 +27,13 @@ Elysium testnet (chain 99801), not audited.**
 
 ## Risk limits
 
+- **Owner pause** (`setPaused`) stops opening, closing, liquidating and trimming; adding
+  collateral stays open. Use it if a price feed misbehaves.
+- **Price guard.** The keeper can't move a feed more than 25% in one update; larger real gaps
+  need the owner (`forceUpdate`). This limits what a leaked keeper key can do.
+- **Ownership.** Feeds belong to the owner wallet from deployment; calendar, vault and engine
+  are handed over with a two-step transfer (accept on the Trade page's admin panel).
+
 - Profit per position is capped at 9x its collateral; the cap is reserved in the vault until the
   position closes, and LPs can only withdraw unreserved assets.
 - Reserves are limited to 80% of vault assets; open interest is capped per market and side.
@@ -48,10 +55,13 @@ Elysium testnet (chain 99801), not audited.**
 ```bash
 cd contracts
 forge test --match-contract PerpsTest     # 22 tests incl. a solvency fuzz test
-KEEPER=<updater address> WINDOWS_JSON=script/windows-2026-11-to-2027-02.json \
-  forge script script/DeployPerps.s.sol --rpc-url https://testnet-rpc.elysium.kinetiq.xyz \
-  --private-key $PK --broadcast --slow     # writes deployments/perps-99801.json
+KEEPER=<updater> OWNER=<owner wallet> COLLATERAL=0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65 \
+  MAX_OI=2000000000 WINDOWS_JSON=script/windows-2026-11-to-2027-11.json \
+  forge script script/DeployPerps.s.sol --rpc-url https://rpc.elysium.kinetiq.xyz \
+  --private-key $PK --broadcast --slow     # writes deployments/perps-99901.json
+# test network: leave COLLATERAL unset (deploys tUSD with a faucet) and use the testnet RPC
 cd ../keeper && PERPS_KEEPER_KEY=... npm run perps
 ```
 
-Then copy `deployments/perps-99801.json` into `deployment` in `web/perps-config.js`.
+Then copy `deployments/perps-99901.json` into `deployment` in `web/perps-config.js`.
+The calendar holds closures through November 2027; the owner adds more with `addClosures`.

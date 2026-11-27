@@ -54,7 +54,7 @@ contract PerpsTest is Test {
         vm.prank(owner);
         vault.setEngine(address(engine));
 
-        feed = new PushPriceFeed(8, "TSLA / USD", address(this), owner);
+        feed = new PushPriceFeed(8, "TSLA / USD", address(this), 10_000, owner);
         feed.update(int256(P100), block.timestamp);
         vm.prank(owner);
         engine.addMarket("TSLA", IAggregatorV3(address(feed)), 1_000_000e6, 1 hours);
@@ -364,6 +364,41 @@ contract PerpsTest is Test {
         engine.deleverage(id); // the 5x position is trimmed to 3x
         (int256 eq,,,,) = engine.positionValue(id);
         assertLe(engine.position(id).size, uint256(eq) * 3);
+    }
+
+    function test_pauseStopsTrading() public {
+        uint256 id = _open(alice, true, 1_000e6, 3_000e6);
+        vm.prank(alice);
+        vm.expectRevert();
+        engine.setPaused(true); // only owner
+        vm.prank(owner);
+        engine.setPaused(true);
+        vm.prank(alice);
+        vm.expectRevert(PerpEngine.Paused.selector);
+        engine.closePosition(id, 0);
+        vm.prank(bob);
+        vm.expectRevert(PerpEngine.Paused.selector);
+        engine.openPosition(0, true, 1_000e6, 2_000e6, 0);
+        vm.prank(alice);
+        engine.addCollateral(id, 10e6); // still allowed
+        vm.prank(owner);
+        engine.setPaused(false);
+        vm.prank(alice);
+        engine.closePosition(id, 0);
+    }
+
+    function test_feedDeviationGuard() public {
+        PushPriceFeed f = new PushPriceFeed(8, "X / USD", address(this), 2_500, owner);
+        f.update(100e8, block.timestamp);
+        vm.warp(block.timestamp + 1);
+        f.update(124e8, block.timestamp); // +24% ok
+        vm.warp(block.timestamp + 1);
+        vm.expectRevert(PushPriceFeed.MoveTooLarge.selector);
+        f.update(50e8, block.timestamp); // -60% blocked for the updater
+        vm.prank(owner);
+        f.forceUpdate(50e8, block.timestamp); // owner can publish a real large gap
+        (, int256 a,,,) = f.latestRoundData();
+        assertEq(a, 50e8);
     }
 
     /// Engine always holds exactly the collateral of open positions, whatever happens.

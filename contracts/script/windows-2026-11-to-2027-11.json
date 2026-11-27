@@ -1,0 +1,277 @@
+[
+  {
+    "end": 1796000400,
+    "label": "weekend",
+    "start": 1795827600
+  },
+  {
+    "end": 1796605200,
+    "label": "weekend",
+    "start": 1796432400
+  },
+  {
+    "end": 1797210000,
+    "label": "weekend",
+    "start": 1797037200
+  },
+  {
+    "end": 1797814800,
+    "label": "weekend",
+    "start": 1797642000
+  },
+  {
+    "end": 1798419600,
+    "label": "Christmas Day + weekend",
+    "start": 1798160400
+  },
+  {
+    "end": 1799024400,
+    "label": "New Year's Day + weekend",
+    "start": 1798765200
+  },
+  {
+    "end": 1799629200,
+    "label": "weekend",
+    "start": 1799456400
+  },
+  {
+    "end": 1800320400,
+    "label": "weekend + Martin Luther King Jr. Day",
+    "start": 1800061200
+  },
+  {
+    "end": 1800838800,
+    "label": "weekend",
+    "start": 1800666000
+  },
+  {
+    "end": 1801443600,
+    "label": "weekend",
+    "start": 1801270800
+  },
+  {
+    "end": 1802048400,
+    "label": "weekend",
+    "start": 1801875600
+  },
+  {
+    "end": 1802739600,
+    "label": "weekend + Washington's Birthday",
+    "start": 1802480400
+  },
+  {
+    "end": 1803258000,
+    "label": "weekend",
+    "start": 1803085200
+  },
+  {
+    "end": 1803862800,
+    "label": "weekend",
+    "start": 1803690000
+  },
+  {
+    "end": 1804467600,
+    "label": "weekend",
+    "start": 1804294800
+  },
+  {
+    "end": 1805072400,
+    "label": "weekend",
+    "start": 1804899600
+  },
+  {
+    "end": 1805677200,
+    "label": "weekend",
+    "start": 1805504400
+  },
+  {
+    "end": 1806105600,
+    "label": "Good Friday",
+    "start": 1806019200
+  },
+  {
+    "end": 1806278400,
+    "label": "weekend",
+    "start": 1806109200
+  },
+  {
+    "end": 1806883200,
+    "label": "weekend",
+    "start": 1806710400
+  },
+  {
+    "end": 1807488000,
+    "label": "weekend",
+    "start": 1807315200
+  },
+  {
+    "end": 1808092800,
+    "label": "weekend",
+    "start": 1807920000
+  },
+  {
+    "end": 1808697600,
+    "label": "weekend",
+    "start": 1808524800
+  },
+  {
+    "end": 1809302400,
+    "label": "weekend",
+    "start": 1809129600
+  },
+  {
+    "end": 1809907200,
+    "label": "weekend",
+    "start": 1809734400
+  },
+  {
+    "end": 1810512000,
+    "label": "weekend",
+    "start": 1810339200
+  },
+  {
+    "end": 1811116800,
+    "label": "weekend",
+    "start": 1810944000
+  },
+  {
+    "end": 1811808000,
+    "label": "weekend + Memorial Day",
+    "start": 1811548800
+  },
+  {
+    "end": 1812326400,
+    "label": "weekend",
+    "start": 1812153600
+  },
+  {
+    "end": 1812931200,
+    "label": "weekend",
+    "start": 1812758400
+  },
+  {
+    "end": 1813536000,
+    "label": "Juneteenth (observed) + weekend",
+    "start": 1813276800
+  },
+  {
+    "end": 1814140800,
+    "label": "weekend",
+    "start": 1813968000
+  },
+  {
+    "end": 1814832000,
+    "label": "weekend + Independence Day (observed)",
+    "start": 1814572800
+  },
+  {
+    "end": 1815350400,
+    "label": "weekend",
+    "start": 1815177600
+  },
+  {
+    "end": 1815955200,
+    "label": "weekend",
+    "start": 1815782400
+  },
+  {
+    "end": 1816560000,
+    "label": "weekend",
+    "start": 1816387200
+  },
+  {
+    "end": 1817164800,
+    "label": "weekend",
+    "start": 1816992000
+  },
+  {
+    "end": 1817769600,
+    "label": "weekend",
+    "start": 1817596800
+  },
+  {
+    "end": 1818374400,
+    "label": "weekend",
+    "start": 1818201600
+  },
+  {
+    "end": 1818979200,
+    "label": "weekend",
+    "start": 1818806400
+  },
+  {
+    "end": 1819584000,
+    "label": "weekend",
+    "start": 1819411200
+  },
+  {
+    "end": 1820275200,
+    "label": "weekend + Labor Day",
+    "start": 1820016000
+  },
+  {
+    "end": 1820793600,
+    "label": "weekend",
+    "start": 1820620800
+  },
+  {
+    "end": 1821398400,
+    "label": "weekend",
+    "start": 1821225600
+  },
+  {
+    "end": 1822003200,
+    "label": "weekend",
+    "start": 1821830400
+  },
+  {
+    "end": 1822608000,
+    "label": "weekend",
+    "start": 1822435200
+  },
+  {
+    "end": 1823212800,
+    "label": "weekend",
+    "start": 1823040000
+  },
+  {
+    "end": 1823817600,
+    "label": "weekend",
+    "start": 1823644800
+  },
+  {
+    "end": 1824422400,
+    "label": "weekend",
+    "start": 1824249600
+  },
+  {
+    "end": 1825030800,
+    "label": "weekend",
+    "start": 1824854400
+  },
+  {
+    "end": 1825635600,
+    "label": "weekend",
+    "start": 1825462800
+  },
+  {
+    "end": 1826240400,
+    "label": "weekend",
+    "start": 1826067600
+  },
+  {
+    "end": 1826845200,
+    "label": "weekend",
+    "start": 1826672400
+  },
+  {
+    "end": 1827190800,
+    "label": "Thanksgiving Day",
+    "start": 1827104400
+  },
+  {
+    "end": 1827450000,
+    "label": "weekend",
+    "start": 1827277200
+  }
+]

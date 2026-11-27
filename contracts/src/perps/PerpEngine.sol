@@ -84,10 +84,13 @@ contract PerpEngine is IPerpReserve, Ownable2Step, ReentrancyGuard {
     mapping(uint256 => Position) internal _positions;
     uint256 public nextPositionId = 1;
     uint256 public override totalReserved;
+    /// @notice Emergency stop: no opening, closing, liquidating or trimming while set.
+    bool public paused;
 
     event MarketAdded(uint256 indexed market, string symbol, address feed);
     event MarketUpdated(uint256 indexed market, bool active, uint256 maxOpenInterest, uint32 maxPriceAge);
     event ParamsSet(Params params);
+    event PausedSet(bool paused);
     event PositionOpened(
         uint256 indexed id, address indexed owner, uint256 indexed market, bool isLong,
         uint256 collateral, uint256 size, uint256 price, uint256 fee
@@ -112,6 +115,7 @@ contract PerpEngine is IPerpReserve, Ownable2Step, ReentrancyGuard {
     error NotInPreCloseWindow();
     error WithinWeekendLeverage();
     error InvalidParams();
+    error Paused();
 
     constructor(IERC20 collateralToken_, PerpVault vault_, MarketCalendar calendar_, Params memory params_, address owner_)
         Ownable(owner_)
@@ -126,6 +130,17 @@ contract PerpEngine is IPerpReserve, Ownable2Step, ReentrancyGuard {
 
     function setParams(Params calldata p) external onlyOwner {
         _setParams(p);
+    }
+
+    /// @notice Stop all trading (for example if the price feed misbehaves). Adding collateral stays open.
+    function setPaused(bool paused_) external onlyOwner {
+        paused = paused_;
+        emit PausedSet(paused_);
+    }
+
+    modifier whenNotPaused() {
+        if (paused) revert Paused();
+        _;
     }
 
     function addMarket(string calldata symbol, IAggregatorV3 feed, uint256 maxOpenInterest, uint32 maxPriceAge)
@@ -176,6 +191,7 @@ contract PerpEngine is IPerpReserve, Ownable2Step, ReentrancyGuard {
     function openPosition(uint256 marketId, bool isLong, uint256 collateral, uint256 size, uint256 acceptablePrice)
         external
         nonReentrant
+        whenNotPaused
         returns (uint256 id)
     {
         Params memory p = params;
@@ -225,7 +241,7 @@ contract PerpEngine is IPerpReserve, Ownable2Step, ReentrancyGuard {
     }
 
     /// @notice Close a position and settle profit or loss. `acceptablePrice` bounds the fill (0 = none).
-    function closePosition(uint256 id, uint256 acceptablePrice) external nonReentrant {
+    function closePosition(uint256 id, uint256 acceptablePrice) external nonReentrant whenNotPaused {
         Position memory pos = _positions[id];
         if (pos.size == 0) revert NoPosition();
         if (pos.owner != msg.sender) revert NotOwner();
@@ -244,7 +260,7 @@ contract PerpEngine is IPerpReserve, Ownable2Step, ReentrancyGuard {
     }
 
     /// @notice Liquidate a position whose equity fell below the maintenance margin.
-    function liquidate(uint256 id) external nonReentrant {
+    function liquidate(uint256 id) external nonReentrant whenNotPaused {
         Position memory pos = _positions[id];
         if (pos.size == 0) revert NoPosition();
         Market storage m = _markets[pos.market];
@@ -267,7 +283,7 @@ contract PerpEngine is IPerpReserve, Ownable2Step, ReentrancyGuard {
 
     /// @notice In the pre-close window, trim a position above the weekend leverage cap back to it.
     ///         Anyone can call; the caller earns `deleverageFeeBps` of the trimmed size.
-    function deleverage(uint256 id) external nonReentrant {
+    function deleverage(uint256 id) external nonReentrant whenNotPaused {
         if (!inPreCloseWindow()) revert NotInPreCloseWindow();
         Position storage pos = _positions[id];
         if (pos.size == 0) revert NoPosition();

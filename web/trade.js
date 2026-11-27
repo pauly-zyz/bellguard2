@@ -6,6 +6,7 @@ import {
 const P = window.BELLGUARD_PERPS;
 const $ = (id) => document.getElementById(id);
 const D = P.deployment; // null until deployed: preview mode
+const SYM = D && D.testToken ? "tUSD" : (P.collateralSymbol || "USDC");
 const WINDOWS = window.BELLGUARD_WINDOWS || [];
 
 // Defaults match contracts/script/DeployPerps.s.sol; replaced by on-chain values once deployed.
@@ -15,6 +16,9 @@ const ABI = {
   feed: parseAbi([
     "function latestRoundData() view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)",
     "function getRoundData(uint80) view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)",
+    "function owner() view returns (address)",
+    "function updater() view returns (address)",
+    "function setUpdater(address)",
   ]),
   erc20: parseAbi([
     "function balanceOf(address) view returns (uint256)",
@@ -32,6 +36,13 @@ const ABI = {
     "function openPosition(uint256 marketId, bool isLong, uint256 collateral, uint256 size, uint256 acceptablePrice) returns (uint256)",
     "function closePosition(uint256 id, uint256 acceptablePrice)",
     "function addCollateral(uint256 id, uint256 amount)",
+    "function paused() view returns (bool)",
+    "function setPaused(bool)",
+  ]),
+  owned: parseAbi([
+    "function owner() view returns (address)",
+    "function pendingOwner() view returns (address)",
+    "function acceptOwnership()",
   ]),
   vault: parseAbi([
     "function totalAssets() view returns (uint256)",
@@ -48,6 +59,7 @@ const ABI = {
 const perpsChain = defineChain({
   id: P.chainId, name: P.chain.name, nativeCurrency: P.chain.nativeCurrency,
   rpcUrls: { default: { http: [P.chain.rpc] } },
+  blockExplorers: P.chain.explorer ? { default: { name: "Explorer", url: P.chain.explorer } } : undefined,
 });
 const transportFor = (relay, rpc) => fallback([
   ...(relay ? [http(relay, { retryCount: 2, retryDelay: 800, timeout: 12_000, batch: true })] : []),
@@ -65,6 +77,7 @@ const markets = P.markets.map((m, i) => ({ ...m, market: D ? D.markets.find((x) 
 let sel = 0;
 let isLong = true;
 let onChainPreClose = null;
+let enginePaused = false;
 
 // ---------------------------------------------------------------- helpers
 
@@ -227,6 +240,7 @@ function renderSummary() {
   if (!account) { btn.textContent = "Connect wallet"; btn.disabled = false; }
   else if (!D) { btn.textContent = "Trading opens after deployment"; btn.disabled = true; }
   else if (st.closed) { btn.textContent = "Market closed"; btn.disabled = true; }
+  else if (enginePaused) { btn.textContent = "Trading paused"; btn.disabled = true; }
   else { btn.textContent = (isLong ? "Long " : "Short ") + o.m.symbol + " " + o.L + "x"; btn.disabled = false; }
 }
 
@@ -287,7 +301,7 @@ async function send(logId, label, req) {
 
 async function ensureAllowance(logId, spender, amount) {
   const a = await perps.readContract({ address: D.collateral, abi: ABI.erc20, functionName: "allowance", args: [account, spender] });
-  if (a < amount) await send(logId, "Approve tUSD", { address: D.collateral, abi: ABI.erc20, functionName: "approve", args: [spender, maxUint256] });
+  if (a < amount) await send(logId, "Approve " + SYM, { address: D.collateral, abi: ABI.erc20, functionName: "approve", args: [spender, maxUint256] });
 }
 
 // ---------------------------------------------------------------- trading
@@ -301,7 +315,7 @@ async function submit() {
     const collateral = parseUnits(String(o.C), 6);
     const size = BigInt(Math.floor(o.size * 1e6));
     const bal = await perps.readContract({ address: D.collateral, abi: ABI.erc20, functionName: "balanceOf", args: [account] });
-    if (bal < collateral) throw new Error("Not enough tUSD. Use the faucet button below.");
+    if (bal < collateral) throw new Error("Not enough " + SYM + " in your wallet." + (D.testToken ? " Use the faucet button below." : ""));
     await ensureAllowance("t-olog", D.engine, collateral);
     // 0.5% slippage bound on the fill
     const acceptable = BigInt(Math.round(o.entry * (isLong ? 1.005 : 0.995) * 1e8));
@@ -314,7 +328,7 @@ async function submit() {
 async function faucet() {
   try {
     await send("t-olog", "Faucet", { address: D.collateral, abi: ABI.erc20, functionName: "faucet" });
-    log("t-olog", "10,000 tUSD added to your wallet.");
+    log("t-olog", "10,000 " + SYM + " added to your wallet.");
     refreshAccount();
   } catch (e) { log("t-olog", (e.shortMessage || e.message).split("\n")[0] + " (one claim per hour)", true); }
 }
@@ -364,7 +378,7 @@ async function closePos(id) {
 }
 
 async function addCol(id) {
-  const v = prompt("Add how much tUSD to position #" + id + "?", "50");
+  const v = prompt("Add how much " + SYM + " to position #" + id + "?", "50");
   if (!v) return;
   try {
     const amt = parseUnits(v, 6);
@@ -382,7 +396,7 @@ async function loadVault() {
     perps.readContract({ address: D.vault, abi: ABI.vault, functionName: "totalAssets" }),
     perps.readContract({ address: D.engine, abi: ABI.engine, functionName: "totalReserved" }),
   ]);
-  $("tl-assets").textContent = usd(tok(assets)) + " tUSD";
+  $("tl-assets").textContent = usd(tok(assets)) + " " + SYM;
   $("tl-reserved").textContent = usd(tok(reserved)) + " (" + (assets > 0n ? (Number(reserved) / Number(assets) * 100).toFixed(1) : "0") + "%)";
   if (account) {
     const [shares, maxW, bal] = await Promise.all([
@@ -392,7 +406,7 @@ async function loadVault() {
     ]);
     const value = await perps.readContract({ address: D.vault, abi: ABI.vault, functionName: "convertToAssets", args: [shares] });
     $("tl-mine").textContent = usd(tok(value)) + " (withdrawable " + usd(tok(maxW)) + ")";
-    $("t-bal").textContent = "Wallet: " + usd(tok(bal)).replace("$", "") + " tUSD";
+    $("t-bal").textContent = "Wallet: " + usd(tok(bal)).replace("$", "") + " " + SYM;
   }
 }
 
@@ -411,6 +425,71 @@ async function vaultAction(dep) {
   } catch (e) { log("tl-log", (e.shortMessage || e.message).split("\n")[0], true); }
 }
 
+// ---------------------------------------------------------------- admin (owner wallet only)
+
+const OWNED = () => [["calendar", "Market calendar"], ["vault", "Liquidity vault"], ["engine", "Perps engine"]];
+async function loadAdmin() {
+  const panel = $("t-admin");
+  if (!D || !account) { panel.hidden = true; return; }
+  const rows = await Promise.all(OWNED().map(async ([k, label]) => {
+    const [o, p] = await Promise.all([
+      perps.readContract({ address: D[k], abi: ABI.owned, functionName: "owner" }),
+      perps.readContract({ address: D[k], abi: ABI.owned, functionName: "pendingOwner" }),
+    ]);
+    return { k, label, owner: o.toLowerCase(), pending: p.toLowerCase() };
+  }));
+  const me = account.toLowerCase();
+  const relevant = rows.some((r) => r.owner === me || r.pending === me);
+  panel.hidden = !relevant;
+  if (!relevant) return;
+  $("ta-list").innerHTML = rows.map((r) => "<dt>" + r.label + "</dt><dd>" + (r.owner === me ? "You own it" : r.pending === me ? "Waiting for you to accept" : "Owned by " + r.owner.slice(0, 8) + "…") + "</dd>").join("")
+    + "<dt>Trading</dt><dd>" + (enginePaused ? "Paused" : "Running") + "</dd>";
+  const pending = rows.filter((r) => r.pending === me);
+  $("ta-accept").hidden = pending.length === 0;
+  $("ta-accept").dataset.keys = pending.map((r) => r.k).join(",");
+  const ownsEngine = rows.find((r) => r.k === "engine").owner === me;
+  $("ta-pause").hidden = !ownsEngine;
+  $("ta-pause").textContent = enginePaused ? "Resume trading" : "Pause trading";
+  // Feeds are owned by the owner wallet from deployment.
+  const [feedOwner, updater] = await Promise.all([
+    perps.readContract({ address: markets[0].feed, abi: ABI.feed, functionName: "owner" }),
+    perps.readContract({ address: markets[0].feed, abi: ABI.feed, functionName: "updater" }),
+  ]);
+  $("ta-updater-row").hidden = feedOwner.toLowerCase() !== me;
+  $("ta-list").innerHTML += "<dt>Price updater</dt><dd>" + updater + "</dd>";
+}
+
+async function setUpdater() {
+  const to = ($("ta-updater").value || "").trim();
+  try {
+    if (!/^0x[0-9a-fA-F]{40}$/.test(to)) throw new Error("Enter a wallet address (0x… 42 characters).");
+    for (let i = 0; i < markets.length; i++) {
+      const cur = await perps.readContract({ address: markets[i].feed, abi: ABI.feed, functionName: "updater" });
+      if (cur.toLowerCase() === to.toLowerCase()) continue;
+      await send("ta-log", "Set updater " + markets[i].symbol + " (" + (i + 1) + " of " + markets.length + ")", { address: markets[i].feed, abi: ABI.feed, functionName: "setUpdater", args: [to] });
+    }
+    log("ta-log", "All feeds now accept prices from " + to + ".");
+    refreshAccount();
+  } catch (e) { log("ta-log", (e.shortMessage || e.message).split("\n")[0], true); }
+}
+
+async function acceptAll() {
+  const keys = ($("ta-accept").dataset.keys || "").split(",").filter(Boolean);
+  try {
+    for (const k of keys) await send("ta-log", "Accept " + k, { address: D[k], abi: ABI.owned, functionName: "acceptOwnership" });
+    log("ta-log", "Done. You own " + keys.length + " contract" + (keys.length === 1 ? "" : "s") + ".");
+    refreshAccount();
+  } catch (e) { log("ta-log", (e.shortMessage || e.message).split("\n")[0], true); }
+}
+
+async function togglePause() {
+  try {
+    await send("ta-log", enginePaused ? "Resume trading" : "Pause trading", { address: D.engine, abi: ABI.engine, functionName: "setPaused", args: [!enginePaused] });
+    log("ta-log", "Trading " + (enginePaused ? "resumed." : "paused."));
+    refreshAccount();
+  } catch (e) { log("ta-log", (e.shortMessage || e.message).split("\n")[0], true); }
+}
+
 async function refreshAccount() {
   if (!D) return;
   try {
@@ -420,7 +499,8 @@ async function refreshAccount() {
     ]);
     params = { ...params, ...Object.fromEntries(Object.entries(p).map(([k, v]) => [k, Number(v)])) };
     onChainPreClose = pre;
-    await Promise.all([loadVault(), loadPositions()]);
+    enginePaused = await perps.readContract({ address: D.engine, abi: ABI.engine, functionName: "paused" }).catch(() => false);
+    await Promise.all([loadVault(), loadPositions(), loadAdmin()]);
     renderSummary(); renderHead();
   } catch (e) { log("t-log", "Couldn't read the perps contracts (" + (e.shortMessage || e.message).split("\n")[0] + ").", true); }
 }
@@ -428,8 +508,9 @@ async function refreshAccount() {
 // ---------------------------------------------------------------- wiring
 
 $("t-preview").hidden = !!D;
-$("t-testnet").hidden = !D;
-$("t-faucet").hidden = !D;
+$("t-live").hidden = !D;
+$("t-faucet").hidden = !(D && D.testToken);
+document.querySelectorAll("[data-sym]").forEach((e) => { e.textContent = SYM; });
 document.querySelectorAll("[data-perps]").forEach((b) => { b.disabled = !D; });
 $("t-list").addEventListener("click", (e) => { const b = e.target.closest(".t-item"); if (b) select(Number(b.dataset.i)); });
 $("t-search").addEventListener("input", renderList);
@@ -441,6 +522,9 @@ $("t-submit").addEventListener("click", submit);
 $("t-connect").addEventListener("click", connect);
 $("t-faucet").addEventListener("click", faucet);
 $("tl-dep").addEventListener("click", () => vaultAction(true));
+$("ta-accept").addEventListener("click", acceptAll);
+$("ta-pause").addEventListener("click", togglePause);
+$("ta-set-updater").addEventListener("click", setUpdater);
 $("tl-wd").addEventListener("click", () => vaultAction(false));
 $("t-pos").addEventListener("click", (e) => {
   const c = e.target.closest("[data-close]"); if (c) return closePos(c.dataset.close);

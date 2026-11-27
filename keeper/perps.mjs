@@ -1,4 +1,4 @@
-// Bellguard Perps keeper (test networks).
+// Bellguard Perps keeper (Elysium).
 //
 // Each run:
 //  1. Mirror prices: copy every market's latest Chainlink answer (and its original timestamp)
@@ -8,10 +8,10 @@
 //  4. Poke markets whose borrow index hasn't moved for 6 hours (keeps weekend fees exact).
 //
 // Env:
-//   PERPS_RPC          perps chain RPC (Elysium testnet: https://testnet-rpc.elysium.kinetiq.xyz)
+//   PERPS_RPC          perps chain RPC [Elysium mainnet https://rpc.elysium.kinetiq.xyz]
 //   PERPS_KEEPER_KEY   key of the feed updater / keeper wallet (required unless DRY_RUN=1)
 //   SOURCE_RPC         price source chain RPC [https://rpc.mainnet.chain.robinhood.com]
-//   DEPLOYMENT         [../contracts/deployments/perps-99801.json]
+//   DEPLOYMENT         [../contracts/deployments/perps-99901.json]
 //   DRY_RUN=1          report only
 
 import fs from "fs";
@@ -20,9 +20,9 @@ import { privateKeyToAccount } from "viem/accounts";
 
 const here = (p) => new URL(p, import.meta.url).pathname;
 const DRY = process.env.DRY_RUN === "1";
-const dep = JSON.parse(fs.readFileSync(process.env.DEPLOYMENT || here("../contracts/deployments/perps-99801.json"), "utf8"));
+const dep = JSON.parse(fs.readFileSync(process.env.DEPLOYMENT || here("../contracts/deployments/perps-99901.json"), "utf8"));
 const sources = JSON.parse(fs.readFileSync(here("./perps-sources.json"), "utf8"))["4663"];
-const PERPS_RPC = process.env.PERPS_RPC || "https://testnet-rpc.elysium.kinetiq.xyz";
+const PERPS_RPC = process.env.PERPS_RPC || "https://rpc.elysium.kinetiq.xyz";
 const SOURCE_RPC = process.env.SOURCE_RPC || "https://rpc.mainnet.chain.robinhood.com";
 
 const chain = defineChain({ id: dep.chainId, name: "perps", nativeCurrency: { name: "HYPE", symbol: "HYPE", decimals: 18 }, rpcUrls: { default: { http: [PERPS_RPC] } } });

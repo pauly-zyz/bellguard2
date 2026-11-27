@@ -1,6 +1,6 @@
-name: Perps keeper (Elysium testnet)
+name: Perps keeper (Elysium)
 
-# Mirrors Chainlink stock prices to Bellguard Perps on Elysium testnet, liquidates unsafe
+# Mirrors Chainlink stock prices to Bellguard Perps on Elysium, liquidates unsafe
 # positions and trims leverage before the market closes. Runs only once the perps
 # deployment file exists. Needs the secret PERPS_KEEPER_KEY (the feed updater wallet).
 on:
@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check deployment
         id: dep
-        run: test -f ../contracts/deployments/perps-99801.json && echo "ok=1" >> "$GITHUB_OUTPUT" || echo "Perps not deployed yet; nothing to do."
+        run: test -f ../contracts/deployments/perps-99901.json && echo "ok=1" >> "$GITHUB_OUTPUT" || echo "Perps not deployed yet; nothing to do."
       - uses: actions/setup-node@v4
         if: steps.dep.outputs.ok == '1'
         with:

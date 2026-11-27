@@ -1,14 +1,17 @@
-// Bellguard Perps (long/short stock prices) on Elysium testnet.
-// `deployment` comes from contracts/deployments/perps-99801.json once deployed; until then the
+// Bellguard Perps (long/short stock prices) on Elysium mainnet, collateral USDC.
+// `deployment` comes from contracts/deployments/perps-99901.json once deployed; until then the
 // Trade page runs as a live preview with Chainlink prices from the source chain.
 window.BELLGUARD_PERPS = {
-  chainId: 99801,
+  chainId: 99901,
   chain: {
-    name: "Elysium Testnet",
-    rpc: "https://testnet-rpc.elysium.kinetiq.xyz",
-    relay: "/api/rpc?chain=99801",
+    name: "Elysium",
+    rpc: "https://rpc.elysium.kinetiq.xyz",
+    relay: "/api/rpc?chain=99901",
     nativeCurrency: { name: "HYPE", symbol: "HYPE", decimals: 18 },
+    explorer: "https://elysium.kinetiq.xyz",
   },
+  collateralSymbol: "USDC",
+  owner: "0x4b08C1DbE28e4e260037299e8cb4B34c7FBe2195",
   // Where preview prices and charts come from (Chainlink feeds).
   source: { chainId: 4663, rpc: "https://rpc.mainnet.chain.robinhood.com", relay: "/api/rpc?chain=4663", multicall3: "0xcA11bde05977b3631167028862bE2a173976CA11" },
   deployment: null,

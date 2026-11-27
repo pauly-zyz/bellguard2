@@ -11,6 +11,8 @@ import {IAggregatorV3} from "../interfaces/IAggregatorV3.sol";
 ///         so this is for testing only; production markets should read a real oracle.
 contract PushPriceFeed is IAggregatorV3, Ownable2Step {
     uint8 public immutable override decimals;
+    /// @notice Largest move the updater may publish in one update (bps). Larger moves need the owner.
+    uint16 public immutable maxDeviationBps;
     string public override description;
     address public updater;
 
@@ -24,9 +26,13 @@ contract PushPriceFeed is IAggregatorV3, Ownable2Step {
     error NotUpdater();
     error BadAnswer();
     error StaleOrFuture();
+    error MoveTooLarge();
 
-    constructor(uint8 decimals_, string memory description_, address updater_, address owner_) Ownable(owner_) {
+    constructor(uint8 decimals_, string memory description_, address updater_, uint16 maxDeviationBps_, address owner_)
+        Ownable(owner_)
+    {
         decimals = decimals_;
+        maxDeviationBps = maxDeviationBps_;
         description = description_;
         updater = updater_;
     }
@@ -37,8 +43,23 @@ contract PushPriceFeed is IAggregatorV3, Ownable2Step {
     }
 
     /// @notice Publish a price observed at `updatedAt` (must be newer than the last one).
+    ///         The updater can't move the price more than `maxDeviationBps` at once; this limits
+    ///         what a leaked updater key can do. Real gaps beyond that wait for the owner.
     function update(int256 answer, uint256 updatedAt) external {
         if (msg.sender != updater) revert NotUpdater();
+        if (_answer > 0) {
+            int256 move = answer > _answer ? answer - _answer : _answer - answer;
+            if (uint256(move) * 10_000 > uint256(_answer) * maxDeviationBps) revert MoveTooLarge();
+        }
+        _publish(answer, updatedAt);
+    }
+
+    /// @notice Owner publishes a price without the deviation limit (large real gaps).
+    function forceUpdate(int256 answer, uint256 updatedAt) external onlyOwner {
+        _publish(answer, updatedAt);
+    }
+
+    function _publish(int256 answer, uint256 updatedAt) internal {
         if (answer <= 0) revert BadAnswer();
         if (updatedAt <= _updatedAt || updatedAt > block.timestamp) revert StaleOrFuture();
         _roundId++;
