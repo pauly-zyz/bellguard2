@@ -16,7 +16,8 @@ Premiums rise around earnings and other scheduled events.
 Website: **https://www.bellguard.app** · X: **[@Bellguardapp](https://x.com/Bellguardapp)** · Official $BLGD CA (Elysium): `0x65111d720c2f015b3ee5d4401384efc60f5ebdc8` · [Buy on Montra](https://montramarkets.xyz/token/0x65111d720c2f015b3ee5d4401384efc60f5ebdc8)
 
 Status: **live on Robinhood Chain mainnet since 2026-10-30, not audited.** Pools: COIN/USDG and
-MSTR/USDG on Uniswap v4. Addresses: [`contracts/deployments/4663.json`](contracts/deployments/4663.json).
+MSTR/USDG on Uniswap v4; 20 more (TSLA, NVDA, AAPL, AMZN, GOOGL, META, MSFT, AMD, PLTR, SPY, QQQ, GME,
+CRCL, MU, CRWV, RKLB, IONQ, SPCX, TSM, ORCL) are configured and go live when the owner adds them from the app's Admin panel. Addresses: [`contracts/deployments/4663.json`](contracts/deployments/4663.json).
 An audit, legal review and a multisig owner are still outstanding
 ([launch checklist](docs/launch-checklist.md)). Use only amounts you can afford to lose.
 

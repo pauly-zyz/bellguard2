@@ -71,6 +71,13 @@
       <dl class="kv" id="admin-list"></dl>
       <div class="row"><button class="btn" id="accept" type="button" hidden>Accept ownership</button></div>
       <p class="log" id="a-log"></p>
+      <div id="stocks-admin" hidden>
+        <h3>Stocks waiting to go live</h3>
+        <p class="muted">Each one takes two transactions from this wallet: register the stock with its Chainlink feed, then create its pool at the Chainlink price. Anyone can trade and add liquidity once the pool exists.</p>
+        <ul id="stocks-pending" class="positions"></ul>
+        <div class="row"><button class="btn" id="add-stocks" type="button">Add these stocks</button></div>
+        <p class="log" id="st-log"></p>
+      </div>
     </section>
 
     <section class="panel wide market" id="clock" aria-labelledby="mk-h">

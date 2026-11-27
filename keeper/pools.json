@@ -1,6 +1,26 @@
 {
   "4663": [
-    { "symbol": "COIN", "key": { "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "currency1": "0x6330D8C3178a418788dF01a47479c0ce7CCF450b", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4" } },
-    { "symbol": "MSTR", "key": { "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "currency1": "0xec262a75e413fAfD0dF80480274532C79D42da09", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4" } }
+    {"symbol": "COIN", "key": {"currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "currency1": "0x6330D8C3178a418788dF01a47479c0ce7CCF450b", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "MSTR", "key": {"currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "currency1": "0xec262a75e413fAfD0dF80480274532C79D42da09", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "TSLA", "key": {"currency0": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d", "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "NVDA", "key": {"currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "currency1": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "AAPL", "key": {"currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "currency1": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "AMZN", "key": {"currency0": "0x12f190a9F9d7D37a250758b26824B97CE941bF54", "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "GOOGL", "key": {"currency0": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3", "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "META", "key": {"currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "currency1": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "MSFT", "key": {"currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "currency1": "0xe93237C50D904957Cf27E7B1133b510C669c2e74", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "AMD", "key": {"currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "currency1": "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "PLTR", "key": {"currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "currency1": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "SPY", "key": {"currency0": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C", "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "QQQ", "key": {"currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "currency1": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "GME", "key": {"currency0": "0x1b0E319c6A659F002271B69dB8A7df2F911c153E", "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "CRCL", "key": {"currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "currency1": "0xdF0992E440dD0be65BD8439b609d6D4366bf1CB5", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "MU", "key": {"currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "currency1": "0xfF080c8ce2E5feadaCa0Da81314Ae59D232d4afD", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "CRWV", "key": {"currency0": "0x5f10A1C971B69e47e059e1dC91901B59b3fB49C3", "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "RKLB", "key": {"currency0": "0x3b14C39E89D60D627b42a1A4CA45b5bb45Fc12e2", "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "IONQ", "key": {"currency0": "0x558378E000D634A36593E338eBacdd6207640EfE", "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "SPCX", "key": {"currency0": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa", "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "TSM", "key": {"currency0": "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA", "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}},
+    {"symbol": "ORCL", "key": {"currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "currency1": "0xb0992820E760d836549ba69BC7598b4af75dEE03", "fee": 3000, "tickSpacing": 60, "hooks": "0x26ba8a6CA4028DF9C655072F63BC316475542ac4"}}
   ]
 }

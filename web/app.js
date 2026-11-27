@@ -1,7 +1,7 @@
 // Bellguard app: wallet, vault, claims and settlement. Uses viem from jsDelivr.
 import {
   createPublicClient, createWalletClient, custom, http, fallback, parseAbi, formatUnits, parseUnits, defineChain,
-  encodeAbiParameters, keccak256, parseEventLogs,
+  encodeAbiParameters, encodeFunctionData, keccak256, parseEventLogs,
 } from "https://cdn.jsdelivr.net/npm/viem@2.21.54/+esm";
 
 const CFG = window.BELLGUARD_CONFIG;
@@ -31,6 +31,16 @@ const ABI = {
   ]),
   hook: parseAbi([
     "function currentSurchargeBps((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key) view returns (uint256)",
+    "function stockFeed(address stock) view returns (address)",
+    "function registerStock(address stock, address feed)",
+  ]),
+  multicall3: parseAbi([
+    "struct Call3 { address target; bool allowFailure; bytes callData; }",
+    "struct Result { bool success; bytes returnData; }",
+    "function aggregate3(Call3[] calls) payable returns (Result[])",
+  ]),
+  poolManager: parseAbi([
+    "function initialize((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key, uint160 sqrtPriceX96) returns (int24)",
   ]),
   permit2: parseAbi([
     "function allowance(address owner, address token, address spender) view returns (uint160 amount, uint48 expiration, uint48 nonce)",
@@ -46,6 +56,7 @@ const ABI = {
   ]),
   feed: parseAbi([
     "function latestRoundData() view returns (uint80, int256 answer, uint256, uint256 updatedAt, uint80)",
+    "function decimals() view returns (uint8)",
   ]),
   owned: parseAbi([
     "function owner() view returns (address)",
@@ -77,9 +88,11 @@ const poolKey = () => {
   const d = dep();
   if (!d) return null;
   if (!d.pools) return d.pool;
-  const i = Math.max(0, $("pool-select").selectedIndex);
-  return d.pools[i].key;
+  return d.pools[selectedPoolIndex()].key;
 };
+const selectedPoolIndex = () => Math.max(0, Number($("pool-select").value) || 0);
+// Which configured pools exist on-chain (null until read; then every pool shows if the read fails).
+let poolLive = null;
 // The public RPC rate-limits hard, so: one multicall per refresh where available, and
 // patient retries. Clients are cached per chain.
 const clients = {};
@@ -128,12 +141,27 @@ function setDeployedUi() {
   $("liquidity").hidden = !(d && d.positionManager);
   const sel = $("pool-select");
   const pools = d && d.pools ? d.pools : [];
-  if (sel.dataset.chain !== String(chainId)) {
-    sel.innerHTML = pools.map((p) => "<option>" + p.symbol + " / USDG</option>").join("") || "<option>Example pool</option>";
-    sel.dataset.chain = String(chainId);
+  const shown = pools.map((p, i) => i).filter((i) => !poolLive || poolLive[i]);
+  const sig = chainId + ":" + shown.join(",");
+  if (sel.dataset.sig !== sig) {
+    const keep = sel.value;
+    sel.innerHTML = shown.map((i) => "<option value='" + i + "'>" + pools[i].symbol + " / USDG</option>").join("") || "<option value='0'>Example pool</option>";
+    if (shown.includes(Number(keep))) sel.value = keep;
+    sel.dataset.sig = sig;
   }
   document.querySelectorAll("[data-needs-deploy]").forEach((b) => { b.disabled = !d || !account; });
   document.querySelectorAll(".example-tag").forEach((t) => { t.hidden = !!d; });
+}
+
+/** Read which configured pools are initialised, so the pool list only offers live ones. */
+async function loadPoolStatus() {
+  const d = dep();
+  if (!d || !d.pools) return;
+  try {
+    const slots = await readMany(d.pools.map((p) => ({ address: d.stateView, abi: ABI.stateView, functionName: "getSlot0", args: [poolIdOf(p.key)] })));
+    poolLive = slots.map((s) => s[0] > 0n);
+    setDeployedUi();
+  } catch { setTimeout(loadPoolStatus, 10_000); }
 }
 
 async function refresh() {
@@ -198,7 +226,7 @@ const POOL_KEY_TYPE = {
 };
 const MAX_TICK = 887272;
 const poolIdOf = (key) => keccak256(encodeAbiParameters([POOL_KEY_TYPE], [key]));
-const currentPool = () => { const d = dep(); return d && d.pools ? d.pools[Math.max(0, $("pool-select").selectedIndex)] : null; };
+const currentPool = () => { const d = dep(); return d && d.pools ? d.pools[selectedPoolIndex()] : null; };
 let lpPlan = null;
 
 /** Read pool state and turn the USDG amount + range into a mint plan (liquidity, token caps). */
@@ -325,7 +353,7 @@ function renderPositions() {
     b.addEventListener("click", () => {
       const pools = d && d.pools ? d.pools : [];
       const i = pools.findIndex((p) => p.symbol === pos.symbol);
-      if (i >= 0) $("pool-select").selectedIndex = i;
+      if (i >= 0) $("pool-select").value = String(i);
       $("c-owner").value = d.positionManager; $("c-salt").value = pos.tokenId;
       $("c-lower").value = pos.tickLower; $("c-upper").value = pos.tickUpper;
       $("c-window").focus();
@@ -358,6 +386,73 @@ async function refreshAdmin() {
   const pendingForMe = rows.filter((r) => r.pending.toLowerCase() === me);
   $("accept").hidden = pendingForMe.length === 0;
   $("accept").dataset.keys = pendingForMe.map((r) => r.k).join(",");
+  const hookOwner = rows.find((r) => r.k === "hook");
+  if (hookOwner && hookOwner.owner.toLowerCase() === me) await refreshStocksAdmin();
+}
+
+// ---------------------------------------------------------------- adding stocks (owner)
+
+/** sqrt(price) * 2^96 for a new pool, from the Chainlink USD price (same maths as PriceMath in Operate.s.sol). */
+function bigSqrt(n) {
+  if (n < 2n) return n;
+  let x = BigInt(Math.floor(Math.sqrt(Number(n)))) || 1n;
+  for (;;) { const y = (x + n / x) >> 1n; if (y >= x) { if (x * x > n) x -= 1n; return x; } x = y; }
+}
+function sqrtPriceFromFeed(answer, feedDec, stockDec, usdgIs0) {
+  const num = answer * 10n ** 6n;                        // USDG raw per stock raw = answer * 1e6 / 10^(feedDec + stockDec)
+  const den = 10n ** BigInt(feedDec + stockDec);
+  const ratioX192 = usdgIs0 ? (den << 192n) / num : (num << 192n) / den;
+  return bigSqrt(ratioX192);
+}
+
+let pendingStocks = [];
+async function refreshStocksAdmin() {
+  const d = dep();
+  if (!d || !d.pools || !d.poolManager) return;
+  const reads = d.pools.flatMap((p) => [
+    { address: d.stateView, abi: ABI.stateView, functionName: "getSlot0", args: [poolIdOf(p.key)] },
+    { address: d.hook, abi: ABI.hook, functionName: "stockFeed", args: [p.stock] },
+  ]);
+  const v = await readMany(reads);
+  pendingStocks = d.pools.map((p, i) => ({ p, live: v[2 * i][0] > 0n, registered: BigInt(v[2 * i + 1]) !== 0n })).filter((x) => !x.live);
+  $("stocks-admin").hidden = pendingStocks.length === 0;
+  $("stocks-pending").innerHTML = pendingStocks.map((x) => "<li><span>" + x.p.symbol + " / USDG</span><span class='muted'>"
+    + (x.registered ? "Registered, pool not created" : "Not registered") + "</span></li>").join("");
+}
+
+async function addStocks() {
+  const d = dep();
+  const btn = $("add-stocks");
+  btn.disabled = true;
+  try {
+    const todo = pendingStocks.filter((x) => !x.registered);
+    // 1) register each stock with its feed: owner-only, one transaction each
+    for (let i = 0; i < todo.length; i++) {
+      const { p } = todo[i];
+      await send("st-log", "Register " + p.symbol + " (" + (i + 1) + " of " + todo.length + ")", { address: d.hook, abi: ABI.hook, functionName: "registerStock", args: [p.stock, p.feed] });
+    }
+    // 2) create every pool at its Chainlink price in a single transaction (pool creation is open to anyone)
+    const reads = pendingStocks.flatMap(({ p }) => [
+      { address: p.feed, abi: ABI.feed, functionName: "latestRoundData" },
+      { address: p.feed, abi: ABI.feed, functionName: "decimals" },
+      { address: p.stock, abi: ABI.erc20, functionName: "decimals" },
+    ]);
+    const v = await readMany(reads);
+    const calls = pendingStocks.map(({ p }, i) => {
+      const [round, feedDec, stockDec] = v.slice(3 * i, 3 * i + 3);
+      if (round[1] <= 0n) throw new Error(p.symbol + ": Chainlink price unavailable");
+      const usdgIs0 = p.key.currency0.toLowerCase() === d.usdg.toLowerCase();
+      const sqrtP = sqrtPriceFromFeed(round[1], Number(feedDec), Number(stockDec), usdgIs0);
+      return { target: d.poolManager, allowFailure: false, callData: encodeFunctionData({ abi: ABI.poolManager, functionName: "initialize", args: [p.key, sqrtP] }) };
+    });
+    await send("st-log", "Create " + calls.length + " pool" + (calls.length === 1 ? "" : "s"), { address: CFG.chains[chainId].multicall3, abi: ABI.multicall3, functionName: "aggregate3", args: [calls] });
+    log("st-log", "Done. " + calls.length + " stock" + (calls.length === 1 ? " is" : "s are") + " now live.");
+    await loadPoolStatus();
+    await refreshStocksAdmin();
+  } catch (e) {
+    log("st-log", (e.shortMessage || e.message).split("\n")[0] + " Press the button again to continue where it stopped.", true);
+    refreshStocksAdmin().catch(() => {});
+  } finally { btn.disabled = false; }
 }
 
 async function refreshAdminWithRetry() {
@@ -536,7 +631,7 @@ async function payout() {
 
 $("network").value = String(chainId);
 $("pool-select").addEventListener("change", refresh);
-$("network").addEventListener("change", (e) => { chainId = Number(e.target.value); account = null; $("connect").textContent = "Connect wallet"; refresh(); });
+$("network").addEventListener("change", (e) => { chainId = Number(e.target.value); account = null; $("connect").textContent = "Connect wallet"; poolLive = null; refresh(); loadPoolStatus(); });
 $("connect").addEventListener("click", connect);
 $("deposit").addEventListener("click", deposit);
 $("withdraw").addEventListener("click", withdraw);
@@ -545,10 +640,12 @@ $("register").addEventListener("click", register);
 $("settle").addEventListener("click", settle);
 $("pay").addEventListener("click", payout);
 $("accept").addEventListener("click", acceptAll);
+$("add-stocks").addEventListener("click", addStocks);
 $("lp-add").addEventListener("click", addLiquidity);
 for (const id of ["lp-usdg", "lp-range"]) $(id).addEventListener("change", () => planLiquidity().catch((e) => log("lp-log", e.shortMessage || e.message, true)));
 $("pool-select").addEventListener("change", () => planLiquidity().catch(() => {}));
 renderPositions();
 planLiquidity().catch(() => {});
 refresh();
+loadPoolStatus();
 setInterval(refresh, 30000);
