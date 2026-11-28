@@ -34,5 +34,6 @@ jobs:
         if: steps.dep.outputs.ok == '1'
         env:
           PERPS_KEEPER_KEY: ${{ secrets.PERPS_KEEPER_KEY }}
+          PYTH_API_KEY: ${{ secrets.PYTH_API_KEY }}
           DRY_RUN: ${{ secrets.PERPS_KEEPER_KEY == '' && '1' || '0' }}
         run: npm run perps

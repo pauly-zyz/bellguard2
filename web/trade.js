@@ -39,6 +39,9 @@ const ABI = {
     "function addCollateral(uint256 id, uint256 amount)",
     "function paused() view returns (bool)",
     "function setPaused(bool)",
+    "function marketCount() view returns (uint256)",
+    "function market(uint256) view returns ((address feed, uint32 maxPriceAge, bool active, uint256 maxOpenInterest, uint256 longOpenInterest, uint256 shortOpenInterest, uint256 borrowIndex, uint64 lastAccrual, string symbol))",
+    "function addMarket(string symbol, address feed, uint256 maxOpenInterest, uint32 maxPriceAge) returns (uint256)",
   ]),
   owned: parseAbi([
     "function owner() view returns (address)",
@@ -74,7 +77,13 @@ const source = createPublicClient({
 
 let account = null;
 let wallet = null;
-const markets = P.markets.map((m, i) => ({ ...m, market: D ? D.markets.find((x) => x.symbol === m.symbol)?.market ?? i : i, feed: D ? D.markets.find((x) => x.symbol === m.symbol)?.feed : null, price: null, updated: 0, spark: null }));
+// Markets that can be traded: in preview, every configured market with a Chainlink source; once
+// deployed, the engine's markets (read on-chain at start-up, so newly added ones appear without a
+// site update), with names, logos and countries from the config.
+const meta = (sym) => P.markets.find((m) => m.symbol === sym) || { symbol: sym, name: sym, country: "Other" };
+let markets = (D ? D.markets.map((x) => ({ ...meta(x.symbol), market: x.market, feed: x.feed }))
+  : P.markets.filter((m) => m.sourceFeed).map((m, i) => ({ ...m, market: i, feed: null })))
+  .map((m) => ({ ...m, price: null, updated: 0, spark: null }));
 let sel = 0;
 let isLong = true;
 let onChainPreClose = null;
@@ -122,7 +131,7 @@ async function loadPrices() {
   try {
     if (D) {
       const r = await Promise.all(markets.map((m) => perps.readContract({ address: m.feed, abi: ABI.feed, functionName: "latestRoundData" })));
-      r.forEach((x, i) => { markets[i].price = Number(x[1]) / 1e8; markets[i].updated = Number(x[3]); });
+      r.forEach((x, i) => { markets[i].price = x[1] > 0n ? Number(x[1]) / 1e8 : null; markets[i].updated = Number(x[3]); });
     } else {
       const r = await source.multicall({ contracts: markets.map((m) => ({ address: m.sourceFeed, abi: ABI.feed, functionName: "latestRoundData" })), allowFailure: true });
       r.forEach((x, i) => { if (x.status === "success") { markets[i].price = Number(x.result[1]) / 1e8; markets[i].updated = Number(x.result[3]); markets[i].round = x.result[0]; } });
@@ -142,6 +151,14 @@ async function loadSpark(i) {
   if (m.spark || m.sparkLoading) { renderSpark(); return; }
   m.sparkLoading = true;
   try {
+    if (!m.sourceFeed) {
+      // No Chainlink history (e.g. Pyth-priced markets): use the on-chain feed's own price updates.
+      const logs = await perps.getLogs({ address: m.feed, event: parseAbi(["event AnswerUpdated(int256 indexed current, uint256 indexed roundId, uint256 updatedAt)"])[0], fromBlock: 0n, toBlock: "latest" });
+      m.spark = logs.map((l) => ({ t: Number(l.args.updatedAt), p: Number(l.args.current) / 1e8 })).filter((x) => x.p > 0).sort((a, b) => a.t - b.t).slice(-HISTORY);
+      m.sparkLoading = false;
+      if (i === sel) { renderSpark(true); renderHead(); }
+      return;
+    }
     let round = m.round;
     if (round == null) round = (await source.readContract({ address: m.sourceFeed, abi: ABI.feed, functionName: "latestRoundData" }))[0];
     const ids = []; for (let k = HISTORY - 1; k >= 0; k--) if (round - BigInt(k) > 0n) ids.push(round - BigInt(k));
@@ -160,13 +177,26 @@ async function loadSpark(i) {
 // ---------------------------------------------------------------- rendering
 
 let marketFilter = "all";
+const FLAGS = { "United States": "🇺🇸", China: "🇨🇳", Netherlands: "🇳🇱", Taiwan: "🇹🇼", "South Korea": "🇰🇷", Commodities: "🛢️" };
+const ORDER = ["United States", "China", "Netherlands", "Taiwan", "South Korea", "Commodities"];
+/** Country chips with counts; ETFs as an extra chip. */
+function renderCountries() {
+  const counts = {};
+  for (const m of markets) counts[m.country || "Other"] = (counts[m.country || "Other"] || 0) + 1;
+  const etfs = markets.filter((m) => m.type === "ETF").length;
+  const keys = Object.keys(counts).sort((a, b) => (ORDER.indexOf(a) + 99) % 99 - (ORDER.indexOf(b) + 99) % 99 || a.localeCompare(b));
+  const chip = (f, label, n) => "<button type='button' data-f='" + esc(f) + "' class='" + (marketFilter === f ? "on" : "") + "'>" + label + " <small>" + n + "</small></button>";
+  $("t-mf").innerHTML = chip("all", "All", markets.length)
+    + keys.map((k) => chip(k, (FLAGS[k] ? FLAGS[k] + " " : "") + esc(k === "United States" ? "US" : k), counts[k])).join("")
+    + (etfs ? chip("etf", "ETFs", etfs) : "");
+}
 function renderList() {
   const q = ($("t-search").value || "").trim().toLowerCase();
-  const pass = (m) => marketFilter === "all" || (marketFilter === "etf" ? m.type === "ETF" : marketFilter === "global" ? !!m.region : !m.region && m.type !== "ETF");
+  const pass = (m) => marketFilter === "all" || (marketFilter === "etf" ? m.type === "ETF" : (m.country || "Other") === marketFilter);
   $("t-list").innerHTML = markets.map((m, i) => ({ m, i }))
-    .filter(({ m }) => pass(m) && (!q || m.symbol.toLowerCase().includes(q) || m.name.toLowerCase().includes(q) || (m.region || "").toLowerCase().includes(q)))
+    .filter(({ m }) => pass(m) && (!q || m.symbol.toLowerCase().includes(q) || m.name.toLowerCase().includes(q) || (m.country || "").toLowerCase().includes(q)))
     .map(({ m, i }) => "<button type='button' class='t-item' role='option' data-i='" + i + "' aria-selected='" + (i === sel) + "'>"
-      + logoHtml(m) + "<span class='tk'>" + esc(m.symbol) + "<small>" + esc(m.region ? m.name + " · " + m.region : m.name) + "</small></span><span class='px'>" + px(m.price) + "</span></button>").join("");
+      + logoHtml(m) + "<span class='tk'>" + esc(m.symbol) + "<small>" + (FLAGS[m.country] ? FLAGS[m.country] + " " : "") + esc(m.name) + "</small></span><span class='px'>" + px(m.price) + "</span></button>").join("");
 }
 
 function renderHead() {
@@ -184,8 +214,8 @@ function renderHead() {
   }
   const ch = first && m.price ? (m.price / first - 1) * 100 : null;
   $("t-head").innerHTML = logoHtml(m, "lg")
-    + "<div class='who'><span class='tk'>" + esc(m.symbol) + "<span class='muted'> / USD</span></span><span class='nm'>" + esc(m.name) + (m.region ? " · " + esc(m.region) : "") + (m.type ? " · " + m.type : "") + "</span></div>"
-    + "<div class='px'><b>" + px(m.price) + "</b><span>" + (ch == null ? "" : "<em class='" + (ch >= 0 ? "gain" : "loss") + "'>" + (ch >= 0 ? "▲ +" : "▼ ") + ch.toFixed(2) + "% 24h</em> · ") + "Chainlink " + ago(m.updated) + "</span></div>";
+    + "<div class='who'><span class='tk'>" + esc(m.symbol) + "<span class='muted'> / USD</span></span><span class='nm'>" + esc(m.name) + " · " + (FLAGS[m.country] || "") + " " + esc(m.country || "") + (m.type ? " · " + m.type : "") + "</span></div>"
+    + "<div class='px'><b>" + px(m.price) + "</b><span>" + (ch == null ? "" : "<em class='" + (ch >= 0 ? "gain" : "loss") + "'>" + (ch >= 0 ? "▲ +" : "▼ ") + ch.toFixed(2) + "% 24h</em> · ") + (m.pyth ? "Pyth " : "Chainlink ") + (m.updated ? ago(m.updated) : "· waiting for first price") + "</span></div>";
   const rows = [
     st.closed
       ? ["closed", "Trading paused", "The stock market is closed, so prices are frozen. Trading resumes after reopen (" + fmtWhen(st.until) + ") with a fresh price."]
@@ -289,7 +319,7 @@ function renderSpark(fit) {
   showOhlc(lastBars[lastBars.length - 1]);
   drawPreviewLines(orderPlan());
   const from = new Date(pts[0].t * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-  $("t-chart-foot").textContent = pts.length + " Chainlink price updates since " + from + " · times in your time zone · candles only cover periods with updates";
+  $("t-chart-foot").textContent = pts.length + (m.sourceFeed ? " Chainlink" : " on-chain") + " price updates since " + from + " · times in your time zone · candles only cover periods with updates";
 }
 
 // ---------------------------------------------------------------- pay with HYPE (swap to USDC first)
@@ -699,7 +729,29 @@ async function loadAdmin() {
     perps.readContract({ address: markets[0].feed, abi: ABI.feed, functionName: "updater" }),
   ]);
   $("ta-updater-row").hidden = feedOwner.toLowerCase() !== me;
+  // Configured markets whose feeds are deployed but which the engine doesn't list yet (checked on-chain).
+  const onChain = new Set((await engineMarketList()).map((x) => x.symbol));
+  pendingAdds = P.markets.filter((m) => m.pending && m.feed && !onChain.has(m.symbol));
+  const engineOwner = rows.find((r) => r.k === "engine").owner === me;
+  $("ta-add-row").hidden = !(engineOwner && pendingAdds.length);
+  $("ta-add").textContent = "Add " + pendingAdds.length + " market" + (pendingAdds.length === 1 ? "" : "s");
+  $("ta-add-note").textContent = "Ready to list: " + pendingAdds.map((m) => m.symbol).join(", ") + ". One transaction each. They trade once their price feed has a recent price.";
   $("ta-list").innerHTML += "<dt>Price updater</dt><dd>" + updater + "</dd>";
+}
+
+let pendingAdds = [];
+async function addMarkets() {
+  try {
+    const listed = new Set((await engineMarketList()).map((x) => x.symbol));
+    for (let i = 0; i < pendingAdds.length; i++) {
+      const m = pendingAdds[i];
+      if (listed.has(m.symbol)) continue; // never add a market twice
+      await send("ta-log", "Add " + m.symbol + " (" + (i + 1) + " of " + pendingAdds.length + ")", { address: D.engine, abi: ABI.engine, functionName: "addMarket", args: [m.symbol, m.feed, 2_000_000_000n, 86400] });
+    }
+    log("ta-log", "Done. " + pendingAdds.length + " markets added.");
+    await loadEngineMarkets(5);
+    refreshAccount();
+  } catch (e) { log("ta-log", (e.shortMessage || e.message).split("\n")[0] + " Press the button again to continue.", true); refreshAccount(); }
 }
 
 async function setUpdater() {
@@ -760,8 +812,7 @@ $("t-search").addEventListener("input", renderList);
 $("t-mf").addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;
   marketFilter = b.dataset.f;
-  document.querySelectorAll("#t-mf button").forEach((x) => x.classList.toggle("on", x === b));
-  renderList();
+  renderCountries(); renderList();
 });
 $("t-long").addEventListener("click", () => { isLong = true; $("t-long").classList.add("on"); $("t-short").classList.remove("on"); renderSummary(); });
 $("t-short").addEventListener("click", () => { isLong = false; $("t-short").classList.add("on"); $("t-long").classList.remove("on"); renderSummary(); });
@@ -795,11 +846,35 @@ $("tl-dep").addEventListener("click", () => vaultAction(true));
 $("ta-accept").addEventListener("click", acceptAll);
 $("ta-pause").addEventListener("click", togglePause);
 $("ta-set-updater").addEventListener("click", setUpdater);
+$("ta-add").addEventListener("click", addMarkets);
 $("tl-wd").addEventListener("click", () => vaultAction(false));
 $("t-pos").addEventListener("click", (e) => {
   const c = e.target.closest("[data-close]"); if (c) return closePos(c.dataset.close);
   const a = e.target.closest("[data-add]"); if (a) return addCol(a.dataset.add);
 });
+
+/** Symbols listed on the engine right now (read on-chain). */
+async function engineMarketList() {
+  const n = Number(await perps.readContract({ address: D.engine, abi: ABI.engine, functionName: "marketCount" }));
+  return Promise.all(Array.from({ length: n }, (_, i) => perps.readContract({ address: D.engine, abi: ABI.engine, functionName: "market", args: [BigInt(i)] })));
+}
+
+/** Read the engine's markets so markets added on-chain show up without a site update. */
+async function loadEngineMarkets(tries = 1) {
+  if (!D) return;
+  try {
+    const all = await engineMarketList();
+    if (all.length <= markets.length) {
+      if (tries > 1) setTimeout(() => loadEngineMarkets(tries - 1), 3000);
+      return;
+    }
+    const cur = markets[sel] && markets[sel].symbol;
+    const known = new Map(markets.map((m) => [m.symbol, m]));
+    markets = all.map((x, i) => known.get(x.symbol) || { ...meta(x.symbol), market: i, feed: x.feed, price: null, updated: 0, spark: null });
+    sel = Math.max(0, markets.findIndex((m) => m.symbol === cur));
+    renderCountries(); renderList(); loadPrices();
+  } catch (e) { console.warn("engine markets:", e.shortMessage || e.message); }
+}
 
 // Links from the home page: trade.html?m=TSLA&side=short
 {
@@ -808,8 +883,9 @@ $("t-pos").addEventListener("click", (e) => {
   if (i >= 0) sel = i;
   if (q.get("side") === "short") { isLong = false; $("t-short").classList.add("on"); $("t-long").classList.remove("on"); }
 }
-renderList(); renderHead(); renderSummary(); renderSpark();
+renderCountries(); renderList(); renderHead(); renderSummary(); renderSpark();
 loadPrices();
+loadEngineMarkets();
 refreshAccount();
 setInterval(loadPrices, 60_000);
 loadHypePrice();

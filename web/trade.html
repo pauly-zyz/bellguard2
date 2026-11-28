@@ -67,7 +67,7 @@
       <p class="eyebrow">Bellguard Perps · Elysium</p>
       <h1>Long or short stocks, <em style="color:var(--brass)">bell-aware</em></h1>
     </div>
-    <p class="muted" style="max-width:48ch">Up to 20x on 34 stocks and ETFs — US tech, ASML, Alibaba, TSMC, Korea, silver and oil — settled in USD. Trading pauses when the stock market closes, so nobody trades a frozen weekend price.</p>
+    <p class="muted" style="max-width:48ch">Up to 20x on stocks and ETFs from the US, China, Europe, Taiwan and Korea, plus silver and oil — settled in USD. Pick a country to browse. Trading pauses when the stock market closes, so nobody trades a frozen weekend price.</p>
   </div>
 
   <div class="banner wide" id="t-preview">
@@ -82,13 +82,8 @@
     <aside class="panel t-markets" aria-labelledby="tm-h">
       <div class="panel-head"><h2 id="tm-h" style="font-size:var(--step-1)">Markets</h2><span class="pill open" id="t-pill">Market open</span></div>
       <div class="t-mfilters">
-        <input id="t-search" type="search" placeholder="Search 34 markets" aria-label="Search markets" autocomplete="off">
-        <div class="seg" id="t-mf" role="group" aria-label="Filter markets">
-          <button type="button" data-f="all" class="on">All</button>
-          <button type="button" data-f="us">US</button>
-          <button type="button" data-f="global">Global</button>
-          <button type="button" data-f="etf">ETFs</button>
-        </div>
+        <input id="t-search" type="search" placeholder="Search markets" aria-label="Search markets" autocomplete="off">
+        <div class="t-countries" id="t-mf" role="group" aria-label="Filter by country"></div>
       </div>
       <div class="t-list" id="t-list" role="listbox" aria-label="Markets"></div>
     </aside>
@@ -151,6 +146,10 @@
       <div class="row">
         <button class="btn" id="ta-accept" type="button" hidden>Accept ownership</button>
         <button class="btn ghost" id="ta-pause" type="button" hidden>Pause trading</button>
+      </div>
+      <div class="row" id="ta-add-row" hidden>
+        <p class="muted" style="flex:1 1 280px;margin:0" id="ta-add-note"></p>
+        <button class="btn" id="ta-add" type="button">Add markets</button>
       </div>
       <div class="row" id="ta-updater-row" hidden>
         <div class="field" style="flex:3 1 280px"><label for="ta-updater">Price updater (keeper wallet) for all feeds</label><input id="ta-updater" placeholder="0x…"></div>

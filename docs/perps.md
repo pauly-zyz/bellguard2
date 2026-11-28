@@ -11,6 +11,15 @@ META, MSFT, PLTR, COIN, MSTR, AMD, CRCL, CRWV, DELL, GME, INTC, IONQ, MU, ORCL, 
 SPCX, USAR, CLSK; outside the US: ASML and NBIS (Netherlands), BABA (China), TSM (Taiwan);
 ETFs: SPY, QQQ, EWY (South Korea), SLV (silver), USO (oil). Add more with `script/UpdatePerps.s.sol`.
 
+**China (Pyth-priced, added 2026-11-28):** PDD, JD, BIDU, NIO, LI, XPEV, TME, BILI, NTES, YUMC, EDU,
+BEKE, FUTU, TCOM and the ETFs FXI, KWEB, MCHI. Their feeds are deployed
+(`deployments/perps-feeds-99901.json`); the owner lists them with the Trade page's admin button
+("Add markets"). The keeper prices them from Pyth Hermes, which needs a Pyth API key
+(`PYTH_API_KEY`). Without prices they can't trade: the engine rejects stale or missing prices.
+Charts for these markets are built from the feed's own on-chain price updates.
+
+Markets are grouped by country on the Trade page (`country` in `web/perps-config.js`).
+
 ## Contracts (`contracts/src/perps/`)
 
 | Contract | Role |

@@ -16,10 +16,10 @@ const ALLOWED = new Set([
   "eth_chainId", "eth_blockNumber", "eth_call", "eth_getBalance", "eth_getCode",
   "eth_getTransactionReceipt", "eth_getTransactionByHash", "eth_getBlockByNumber",
   "eth_estimateGas", "eth_gasPrice", "eth_maxPriorityFeePerGas", "eth_feeHistory",
-  "eth_getTransactionCount", "net_version",
+  "eth_getTransactionCount", "net_version", "eth_getLogs",
 ]);
 // Cache only calls whose answer can't go stale within a few seconds in a way that matters.
-const CACHE_MS = { eth_chainId: 3_600_000, net_version: 3_600_000, eth_call: 4_000, eth_blockNumber: 2_000, eth_getCode: 60_000 };
+const CACHE_MS = { eth_chainId: 3_600_000, net_version: 3_600_000, eth_call: 4_000, eth_blockNumber: 2_000, eth_getCode: 60_000, eth_getLogs: 30_000 };
 const cache = new Map();
 
 async function forward(url, body) {
@@ -44,6 +44,12 @@ async function handleOne(url, chainId, call) {
   }
   if (!ALLOWED.has(call.method)) {
     return { jsonrpc: "2.0", id, error: { code: -32601, message: "Method not allowed on this relay" } };
+  }
+  if (call.method === "eth_getLogs") {
+    const f = (call.params || [])[0] || {};
+    if (!f.address || Array.isArray(f.address)) {
+      return { jsonrpc: "2.0", id, error: { code: -32602, message: "eth_getLogs needs a single contract address on this relay" } };
+    }
   }
   const ttl = CACHE_MS[call.method];
   const key = ttl ? chainId + ":" + call.method + ":" + JSON.stringify(call.params || []) : null;

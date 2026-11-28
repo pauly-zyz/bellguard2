@@ -12,6 +12,7 @@
 //   PERPS_RPC          perps chain RPC [Elysium mainnet https://rpc.elysium.kinetiq.xyz]
 //   PERPS_KEEPER_KEY   key of the feed updater / keeper wallet (required unless DRY_RUN=1)
 //   SOURCE_RPC         price source chain RPC [https://rpc.mainnet.chain.robinhood.com]
+//   PYTH_API_KEY       Pyth Hermes key, for markets priced by Pyth (skipped without it)
 //   DEPLOYMENT         [../contracts/deployments/perps-99901.json]
 //   DRY_RUN=1          report only
 
@@ -22,7 +23,12 @@ import { privateKeyToAccount } from "viem/accounts";
 const here = (p) => new URL(p, import.meta.url).pathname;
 const DRY = process.env.DRY_RUN === "1";
 const dep = JSON.parse(fs.readFileSync(process.env.DEPLOYMENT || here("../contracts/deployments/perps-99901.json"), "utf8"));
-const sources = JSON.parse(fs.readFileSync(here("./perps-sources.json"), "utf8"))["4663"];
+const allSources = JSON.parse(fs.readFileSync(here("./perps-sources.json"), "utf8"));
+const sources = allSources["4663"];
+const pythIds = allSources.pyth || {};
+// Feeds deployed for markets the owner hasn't added to the engine yet: keep their prices fresh too.
+const pendingPath = here(`../contracts/deployments/perps-feeds-${dep.chainId}.json`);
+const pendingFeeds = fs.existsSync(pendingPath) ? JSON.parse(fs.readFileSync(pendingPath, "utf8")) : [];
 const PERPS_RPC = process.env.PERPS_RPC || "https://rpc.elysium.kinetiq.xyz";
 const SOURCE_RPC = process.env.SOURCE_RPC || "https://rpc.mainnet.chain.robinhood.com";
 
@@ -64,19 +70,44 @@ async function send(label, req) {
   }
 }
 
+/** Latest Pyth prices (8 decimals) for the given symbols. Needs PYTH_API_KEY. */
+async function loadPyth(symbols) {
+  const out = {};
+  if (!symbols.length) return out;
+  if (!process.env.PYTH_API_KEY) { console.log(`  ${symbols.length} Pyth markets skipped: PYTH_API_KEY not set`); return out; }
+  const qs = symbols.map((s) => "ids[]=" + pythIds[s]).join("&");
+  const res = await fetch("https://hermes.pyth.network/v2/updates/price/latest?parsed=true&" + qs, { headers: { Authorization: "Bearer " + process.env.PYTH_API_KEY } });
+  if (!res.ok) { console.log(`  Pyth request failed: HTTP ${res.status}`); process.exitCode = 1; return out; }
+  const body = await res.json();
+  const byId = Object.fromEntries((body.parsed || []).map((p) => ["0x" + p.id.replace(/^0x/, ""), p.price]));
+  for (const s of symbols) {
+    const p = byId[pythIds[s]];
+    if (!p) continue;
+    const price = BigInt(p.price), conf = BigInt(p.conf), expo = Number(p.expo);
+    if (price <= 0n || conf * 100n > price * 2n) { console.log(`  ${s}: Pyth price unusable (confidence too wide)`); continue; }
+    const answer = expo + 8 >= 0 ? price * 10n ** BigInt(expo + 8) : price / 10n ** BigInt(-(expo + 8));
+    out[s] = { answer, updatedAt: BigInt(p.publish_time) };
+  }
+  return out;
+}
+
 async function main() {
   const now = (await pub.getBlock()).timestamp;
   console.log(`perps chain ${dep.chainId}, block time ${new Date(Number(now) * 1000).toISOString()}, ${dep.markets.length} markets`);
 
-  // 1. prices
-  for (const m of dep.markets) {
-    const source = sources[m.symbol];
-    if (!source) { console.log(`  ${m.symbol}: no source feed`); continue; }
-    const [s, t] = await Promise.all([
-      src.readContract({ address: source, abi: FEED, functionName: "latestRoundData" }),
-      pub.readContract({ address: m.feed, abi: FEED, functionName: "latestRoundData" }),
-    ]);
-    const [, answer, , updatedAt] = s;
+  // 1. prices (Chainlink on the source chain, or Pyth Hermes)
+  const live = new Set(dep.markets.map((m) => m.symbol));
+  const targets = [...dep.markets, ...pendingFeeds.filter((p) => !live.has(p.symbol))];
+  const pyth = await loadPyth(targets.filter((m) => !sources[m.symbol] && pythIds[m.symbol]).map((m) => m.symbol));
+  for (const m of targets) {
+    let answer, updatedAt;
+    if (sources[m.symbol]) {
+      const r = await src.readContract({ address: sources[m.symbol], abi: FEED, functionName: "latestRoundData" });
+      answer = r[1]; updatedAt = r[3];
+    } else if (pyth[m.symbol]) {
+      ({ answer, updatedAt } = pyth[m.symbol]);
+    } else { if (!pythIds[m.symbol]) console.log(`  ${m.symbol}: no price source`); continue; }
+    const t = await pub.readContract({ address: m.feed, abi: FEED, functionName: "latestRoundData" });
     if (updatedAt <= t[3]) continue; // already mirrored
     // Save gas: skip moves under 0.05% unless the on-chain price is 30+ minutes old.
     const move = t[1] > 0n ? Number(answer > t[1] ? answer - t[1] : t[1] - answer) / Number(t[1]) : 1;

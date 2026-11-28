@@ -1,5 +1,5 @@
 {
-  "_comment": "Chainlink price feed proxies on chain 4663 that the perps keeper copies to the test network.",
+  "_comment": "Price sources the perps keeper copies to Elysium: Chainlink feed proxies on chain 4663, and Pyth price IDs (needs PYTH_API_KEY).",
   "4663": {
     "TSLA": "0xE4479F01738B4e8C428CD8eB72D47AB9BC3c7de6",
     "NVDA": "0xCF169363636D73dbBf77733629CB38919d14232d",
@@ -35,5 +35,24 @@
     "TSM": "0xB48D6D5729Ca032ca43729F4b605bBf9f257A84d",
     "USAR": "0x451B1295aA84FD6d6b58af1a5002eA1b1A1913A0",
     "USO": "0x6D054DECb74Cf8ef3675B0Abc100e02921176EdF"
+  },
+  "pyth": {
+    "PDD": "0xae69f62081eb15ae4f077397871a1cf29cacf75e7b1db740aed9074c1efd3fa4",
+    "JD": "0x4c45e26d5253283ab4736b4f4ba9d0e6517679f8425ef07722dacc4b6da90750",
+    "BIDU": "0x9bdee8cb689424d01f6eaf7217adfcff65b51a30774a77fff8006c21c7059350",
+    "NIO": "0xc8916a12ca17ed0883e37a10c8962370fbd2878a35bb70f6902a0f52be73338c",
+    "LI": "0xb10d624c07226d795e9211c9ac95baf43b4a4234ac89cd319e3c72b20de92f99",
+    "XPEV": "0x9898aa7f08a1ed39d930640595a03f4aaf638c1875763fb94eab70cc0c6d3ed5",
+    "TME": "0x4e9ad694400495593cf8180ffa42490c64a0c721f1c3b2b7ad42c92c7294fd6b",
+    "BILI": "0x006d336e4cd222530a057ed307c619af1379a4dedfc4839dcbab413df956fbaa",
+    "NTES": "0x664fc65e3f9ffb458e7144959ed8d5c86e923eb7ca283efeadb79bd6c1e4b9ce",
+    "YUMC": "0x858c14a1577497bd38969a2b30222fde8241b38566435dc69f68f4c6da45cb0e",
+    "EDU": "0x6c409f638d764e93701e076bb41a20a46324f8533401b1b3cc4cd754c04d5dc4",
+    "BEKE": "0x7da2dc2834b1c9b412a11f414f2ad14814a976e2c7d613ce3c7635b7bde1e036",
+    "FUTU": "0xe6d51d83a2d18919bf5c57604bf3bf581d65efe34d232ba1d0ef33eca03c983f",
+    "TCOM": "0x37527d726792538d5b968b8d5777044cda4413f7814e24978d9a3a9094157c2b",
+    "FXI": "0x978c107498c949190c0b9bb1ad408eb643b7317ad43539ff43897cab967d7fd3",
+    "KWEB": "0x8a11c9ba1c8a59571188ff14ca1cc096520eae277de4ff8bc5a6b58939efb096",
+    "MCHI": "0x33e3853fe3382522aec843bcc3e795bc62ef9d48a47fe2ea7e777926a7ac70f7"
   }
 }

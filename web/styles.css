@@ -598,3 +598,14 @@ footer code { overflow-wrap: anywhere; }
 .t-mfilters #t-search { min-width: 0; }
 .trade-grid .t-markets { grid-template-columns: auto minmax(300px, 420px) minmax(0, 1fr); }
 @media (max-width: 1080px) { .trade-grid .t-markets { grid-template-columns: minmax(0, 1fr); } .t-mfilters { flex-wrap: wrap; } }
+.t-countries { display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+.t-countries button { flex: none; border: 1px solid var(--rule); background: var(--bg); color: var(--muted); font: 600 0.76rem var(--font-body); padding: 6px 10px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.t-countries button small { font: 0.68rem var(--font-data); opacity: 0.8; margin-left: 2px; }
+.t-countries button.on { color: var(--ink); border-color: var(--brass); background: color-mix(in srgb, var(--brass) 10%, var(--bg)); }
+.t-item .flag { font-style: normal; font-size: 0.8rem; }
+.trade-grid .t-markets { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "head filters" "list list"; }
+.t-markets .panel-head { grid-area: head; }
+.t-markets .t-mfilters { grid-area: filters; }
+.t-markets .t-list { grid-area: list; }
+.t-mfilters #t-search { flex: 0 0 200px; }
+@media (max-width: 1080px) { .trade-grid .t-markets { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "filters" "list"; } .t-mfilters { flex-wrap: wrap; } .t-mfilters #t-search { flex: 1 1 100%; } }
