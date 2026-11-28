@@ -2,6 +2,13 @@
   "name": "bellguard-keeper",
   "private": true,
   "type": "module",
-  "scripts": { "settle": "node settle.mjs", "perps": "node perps.mjs" },
-  "dependencies": { "viem": "2.21.54" }
+  "scripts": {
+    "settle": "node settle.mjs",
+    "perps": "node perps.mjs",
+    "rewards": "node rewards.mjs"
+  },
+  "dependencies": {
+    "@openzeppelin/merkle-tree": "^1.0.8",
+    "viem": "2.21.54"
+  }
 }

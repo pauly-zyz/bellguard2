@@ -1,0 +1,21 @@
+{
+  "_comment": "Bellguard holder rewards. Paid in USDC. Eligible: average BLGD balance over the week >= minHolding (contracts and burn addresses excluded). Pool = poolShareBps of the week's perps fees. Eligible traders get their own fees back first; what's left is shared by eligible holders in proportion to their average balance.",
+  "chainId": 99901,
+  "token": "0x65111d720c2f015b3ee5d4401384efc60f5ebdc8",
+  "tokenDecimals": 18,
+  "minHolding": "1000000",
+  "usdcDecimals": 6,
+  "exclude": [
+    "0x000000000000000000000000000000000000dead",
+    "0x0000000000000000000000000000000000000000"
+  ],
+  "epochs": {
+    "1": {
+      "start": "2026-11-30T00:00:00Z",
+      "end": "2026-12-07T00:00:00Z",
+      "poolShareBps": 10000,
+      "note": "Launch week: 100% of fees"
+    }
+  },
+  "distributor": "0x578D2Cc9839a5541deeb40e78ed62E752C58C87b"
+}

@@ -609,3 +609,13 @@ footer code { overflow-wrap: anywhere; }
 .t-markets .t-list { grid-area: list; }
 .t-mfilters #t-search { flex: 0 0 200px; }
 @media (max-width: 1080px) { .trade-grid .t-markets { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "filters" "list"; } .t-mfilters { flex-wrap: wrap; } .t-mfilters #t-search { flex: 1 1 100%; } }
+
+/* rewards page */
+.r-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding-block: 18px 72px; align-items: start; }
+.r-grid .wide { grid-column: 1 / -1; }
+.r-claim { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 16px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--brass) 45%, var(--rule)); background: color-mix(in srgb, var(--brass) 8%, var(--bg)); }
+.r-claim div { display: grid; gap: 2px; }
+.r-claim b { font: 600 1.6rem var(--font-data); font-variant-numeric: tabular-nums; }
+.r-rules { margin: 0; padding-left: 20px; display: grid; gap: 10px; color: var(--muted); }
+.r-rules b { color: var(--ink); }
+@media (max-width: 760px) { .r-grid { grid-template-columns: minmax(0, 1fr); } }

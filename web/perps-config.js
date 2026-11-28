@@ -10,6 +10,14 @@ window.BELLGUARD_PERPS = {
     explorer: "https://elysium.kinetiq.xyz",
   },
   collateralSymbol: "USDC",
+  // $BLGD holder rewards (see keeper/rewards-config.json, which the weekly calculation uses).
+  rewards: {
+    distributor: "0x578D2Cc9839a5541deeb40e78ed62E752C58C87b",
+    token: "0x65111d720c2f015b3ee5d4401384efc60f5ebdc8",
+    tokenDecimals: 18,
+    minHolding: 1000000,
+    weeks: [{ n: 1, start: "2026-11-30T00:00:00Z", end: "2026-12-07T00:00:00Z", poolShareBps: 10000 }],
+  },
   // Pay with native HYPE: swapped to USDC through Uniswap v4 (Universal Router) before opening.
   // Pool: native HYPE / USDC, 0.3%, no hooks (the deepest hookless HYPE/USDC pool, checked 2026-11-27).
   swap: {

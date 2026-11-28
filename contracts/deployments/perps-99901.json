@@ -214,5 +214,6 @@
       "feed": "0xd2dAf452897D7E37De51318b4Ca31001a6037927"
     }
   ],
-  "maxLeverage": 20
+  "maxLeverage": 20,
+  "rewardsDistributor": "0x578D2Cc9839a5541deeb40e78ed62E752C58C87b"
 }

@@ -1,0 +1,40 @@
+name: Holder rewards (weekly)
+
+# After each rewards week ends (Monday 00:00 UTC), calculate who gets what from the week's
+# Bellguard Perps fees and commit web/rewards/epoch-N.json and latest.json. The owner then
+# funds and publishes the week from the Rewards page (one click, two transactions).
+on:
+  schedule:
+    - cron: "23 0 * * 1"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rewards
+  cancel-in-progress: false
+
+jobs:
+  calculate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+        working-directory: keeper
+      - name: Calculate finished weeks that have no file yet
+        working-directory: keeper
+        run: |
+          for n in $(node -e 'const c=require("./rewards-config.json");const now=Date.now();console.log(Object.entries(c.epochs).filter(([n,e])=>Date.parse(e.end)<=now).map(([n])=>n).sort((a,b)=>a-b).join(" "))'); do
+            if [ ! -f "../web/rewards/epoch-$n.json" ]; then EPOCH=$n npm run rewards; fi
+          done
+      - name: Commit results
+        run: |
+          git config user.name "bellguard-bot"
+          git config user.email "bellguard-bot@users.noreply.github.com"
+          git add web/rewards
+          if git diff --cached --quiet; then echo "Nothing new."; else git commit -m "Rewards: weekly calculation" && git push; fi

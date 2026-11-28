@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bellguard Rewards</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#090e18">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 4c-5 0-8 4-8 9v6l-3 4h22l-3-4v-6c0-5-3-9-8-9z' fill='%23e2b052'/%3E%3Ccircle cx='16' cy='26.5' r='2.4' fill='%23e2b052'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://www.bellguard.app/rewards">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Bellguard">
+<meta property="og:title" content="Bellguard Rewards">
+<meta property="og:description" content="Hold 1,000,000 $BLGD and get Bellguard Perps trading fees back in USDC.">
+<meta property="og:url" content="https://www.bellguard.app/rewards">
+<meta property="og:image" content="https://www.bellguard.app/og.png">
+<meta property="og:image:width" content="1500">
+<meta property="og:image:height" content="500">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@Bellguardapp">
+<meta name="twitter:image" content="https://www.bellguard.app/og.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,600;0,6..96,700;1,6..96,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="trade-page">
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="Bellguard home">
+      <svg class="bell" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4c-5 0-8 4-8 9v6l-3 4h22l-3-4v-6c0-5-3-9-8-9z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="26.5" r="2.4" fill="currentColor"/><path d="M11 13h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Bellguard
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="app.html" class="hide-sm">Cover app</a>
+      <a href="trade.html">Trade</a>
+      <a href="rewards.html" aria-current="page">Rewards</a>
+      <span class="net-badge" id="net-badge">Elysium</span>
+      <button class="btn" id="r-connect" type="button">Connect wallet</button>
+    </nav>
+  </div>
+</header>
+
+<div class="picker-backdrop" id="wallet-picker" hidden>
+  <div class="picker" role="dialog" aria-modal="true" aria-labelledby="wp-h">
+    <h2 id="wp-h" style="font-size:var(--step-1)">Choose a wallet</h2>
+    <div class="wallet-list" id="wallet-list"></div>
+    <p class="note" style="margin:0">Don't see your wallet? Unlock it, then reload this page.</p>
+    <button class="btn ghost" id="wallet-cancel" type="button">Cancel</button>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="app-hero">
+    <div>
+      <p class="eyebrow">$BLGD holder rewards</p>
+      <h1>Trading fees back to <em style="color:var(--brass)">holders</em>, in USDC</h1>
+    </div>
+    <p class="muted" style="max-width:50ch">Hold at least 1,000,000 $BLGD on Elysium. Each week, Bellguard Perps trading fees go back to eligible holders: your own fees first, then a share of everyone else's.</p>
+  </div>
+  <p class="log" id="r-log"></p>
+
+  <div class="r-grid">
+    <section class="panel r-me" aria-labelledby="rm-h">
+      <h2 id="rm-h" style="font-size:var(--step-1)">Your rewards</h2>
+      <dl class="kv" id="r-me">
+        <dt>Wallet</dt><dd>Connect a wallet</dd>
+      </dl>
+      <div class="r-claim">
+        <div><span class="muted">Ready to claim</span><b id="r-claimable">–</b></div>
+        <button class="btn big" id="r-claim" type="button" disabled>Claim USDC</button>
+      </div>
+      <p class="log" id="r-clog"></p>
+    </section>
+
+    <section class="panel r-week" aria-labelledby="rw-h">
+      <div class="panel-head"><h2 id="rw-h" style="font-size:var(--step-1)">This week</h2><span class="pill open" id="r-weekpill">Week 1</span></div>
+      <dl class="kv" id="r-week"></dl>
+      <p class="note" style="margin:0" id="r-weeknote">Fees are counted live from Bellguard Perps. Rewards for a week are calculated after it ends (Monday 00:00 UTC) and can be claimed once published.</p>
+    </section>
+
+    <section class="panel wide" aria-labelledby="rr-h">
+      <h2 id="rr-h" style="font-size:var(--step-1)">How it works</h2>
+      <ol class="r-rules">
+        <li><b>Hold ≥ 1,000,000 $BLGD.</b> Eligibility uses your average balance over the week (time-weighted), so buying just before the week ends doesn't count. Contracts and burn addresses are excluded.</li>
+        <li><b>The pool is the week's trading fees.</b> Open, close and borrow fees from every long and short on Bellguard Perps. Launch week: 100% of fees.</li>
+        <li><b>Traders first.</b> Eligible holders who traded get their own fees back in full.</li>
+        <li><b>Then all holders.</b> Fees paid by everyone else are shared among eligible holders by average balance.</li>
+        <li><b>Claim in USDC</b> on this page, any time after the week is published. One claim collects every unclaimed week.</li>
+      </ol>
+      <p class="note" style="margin:0">Rewards are a fee rebate funded from trading fees, not a return on holding a token. Amounts are calculated from on-chain data; the weekly files are public in the <a href="https://github.com/pauly-zyz/bellguard2/tree/main/web/rewards">project repository</a>.</p>
+    </section>
+
+    <section class="panel wide" id="r-admin" aria-labelledby="ra-h" hidden>
+      <div class="panel-title"><span class="icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg></span><h2 id="ra-h">Rewards admin</h2></div>
+      <dl class="kv" id="ra-list"></dl>
+      <div class="row"><button class="btn" id="ra-publish" type="button" hidden>Fund &amp; publish</button></div>
+      <p class="log" id="ra-log"></p>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap"><p>Official $BLGD CA (Elysium): <code class="num">0x65111d720c2f015b3ee5d4401384efc60f5ebdc8</code> · Rewards contract: <code class="num">0x578D2Cc9839a5541deeb40e78ed62E752C58C87b</code> · Updates: <a href="https://x.com/Bellguardapp">@Bellguardapp on X</a>.</p></div>
+</footer>
+
+<script src="perps-config.js"></script>
+<script type="module" src="rewards.js"></script>
+</body>
+</html>
