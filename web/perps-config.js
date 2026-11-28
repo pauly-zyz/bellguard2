@@ -105,9 +105,143 @@ window.BELLGUARD_PERPS = {
         "name": "Nasdaq-100 ETF",
         "market": 11,
         "feed": "0x195F84c99e8f1bD58C2b3D5720a1897484f35B7A"
+      },
+      {
+        "symbol": "AMD",
+        "name": "AMD",
+        "market": 12,
+        "feed": "0x4389c58c527c4783f6EC8049Ecf956AB90ad0fB5"
+      },
+      {
+        "symbol": "ASML",
+        "name": "ASML (Netherlands)",
+        "market": 13,
+        "feed": "0x0803B2dCC758B196798249113a1473dB60945cD4"
+      },
+      {
+        "symbol": "BABA",
+        "name": "Alibaba (China)",
+        "market": 14,
+        "feed": "0x4A0671ced0973598B2a5927324118BC345785656"
+      },
+      {
+        "symbol": "CLSK",
+        "name": "CleanSpark",
+        "market": 15,
+        "feed": "0x9b311c7F6106968fFE603270FE71D50b3aCeFf7b"
+      },
+      {
+        "symbol": "CRCL",
+        "name": "Circle",
+        "market": 16,
+        "feed": "0x5e30E1a42D0e44Fa7C8EE57d130e7Fc3fDf6499f"
+      },
+      {
+        "symbol": "CRWV",
+        "name": "CoreWeave",
+        "market": 17,
+        "feed": "0xe917c36aB6d0a2abB11E22e05FCF0B8869D31168"
+      },
+      {
+        "symbol": "DELL",
+        "name": "Dell",
+        "market": 18,
+        "feed": "0x3f876caBFA75b01753C873bd61865DadF03AD050"
+      },
+      {
+        "symbol": "EWY",
+        "name": "South Korea ETF",
+        "market": 19,
+        "feed": "0x8F7A91Da165442aF155897a526bBf3E175074Ba2"
+      },
+      {
+        "symbol": "GME",
+        "name": "GameStop",
+        "market": 20,
+        "feed": "0x6932c61dADb69C38156c1a9eBe39FFA5c25357Dd"
+      },
+      {
+        "symbol": "INTC",
+        "name": "Intel",
+        "market": 21,
+        "feed": "0x909f5C66426DdC40e5d49D60b480C4Ffeb83b52b"
+      },
+      {
+        "symbol": "IONQ",
+        "name": "IonQ",
+        "market": 22,
+        "feed": "0xA27d7e6390ca3559D7F00CEAF3c5073620B8d949"
+      },
+      {
+        "symbol": "MU",
+        "name": "Micron",
+        "market": 23,
+        "feed": "0x1ae9F6463F9C7AE6A0E646B8C68a2cB9D3aa0AAc"
+      },
+      {
+        "symbol": "NBIS",
+        "name": "Nebius (Netherlands)",
+        "market": 24,
+        "feed": "0x179D531BE675E83Ae5395Ddba9826944B061420d"
+      },
+      {
+        "symbol": "ORCL",
+        "name": "Oracle",
+        "market": 25,
+        "feed": "0xEA7eCcE54922a5b0323b647e8931dD1da1E4DaA0"
+      },
+      {
+        "symbol": "RGTI",
+        "name": "Rigetti",
+        "market": 26,
+        "feed": "0x3c37BC11cd8865edC6e0568B3806ee933E7DeC7b"
+      },
+      {
+        "symbol": "RKLB",
+        "name": "Rocket Lab",
+        "market": 27,
+        "feed": "0x0F91367157Fc67Df10Fb11C75b1c2FaaE0875941"
+      },
+      {
+        "symbol": "SLV",
+        "name": "Silver ETF",
+        "market": 28,
+        "feed": "0xa87D3Db63004A4EECEaF4Df4C1c82Ac61A81Ea49"
+      },
+      {
+        "symbol": "SNDK",
+        "name": "Sandisk",
+        "market": 29,
+        "feed": "0x7f7843898337213139F74eFe6E7f81aaFC8803eA"
+      },
+      {
+        "symbol": "SPCX",
+        "name": "SpaceX",
+        "market": 30,
+        "feed": "0x7987F5E39098f4191B21E7fd388A4cd972083ca7"
+      },
+      {
+        "symbol": "TSM",
+        "name": "TSMC (Taiwan)",
+        "market": 31,
+        "feed": "0x987bDA8C9489a29169Bd1e5185F8fDF8178D90f6"
+      },
+      {
+        "symbol": "USAR",
+        "name": "USA Rare Earth",
+        "market": 32,
+        "feed": "0xd032ABF824Af2B2AFC0B470F8c2f57f1933996F0"
+      },
+      {
+        "symbol": "USO",
+        "name": "Oil ETF",
+        "market": 33,
+        "feed": "0xd2dAf452897D7E37De51318b4Ca31001a6037927"
       }
-    ]
+    ],
+    "maxLeverage": 20
   },
+
   markets: [
     {
       "symbol": "TSLA",
@@ -180,6 +314,141 @@ window.BELLGUARD_PERPS = {
       "name": "Nasdaq-100 ETF",
       "sourceFeed": "0x41ed2c58611790af0760e31e80Bb427e4e83D603",
       "type": "ETF"
+    },
+    {
+      "symbol": "AMD",
+      "name": "AMD",
+      "sourceFeed": "0xF6d57763DFa625F4A413485261Ab2E71Ff4304CF",
+      "logo": "logos/AMD.png"
+    },
+    {
+      "symbol": "ASML",
+      "name": "ASML",
+      "sourceFeed": "0x3eFBba343e2b1cF9ed4d4D5768e20B70307Aa8c9",
+      "logo": "logos/ASML.png",
+      "region": "Netherlands"
+    },
+    {
+      "symbol": "BABA",
+      "name": "Alibaba",
+      "sourceFeed": "0xDB69948B26050818E8c9f43300F78b2582e67260",
+      "logo": "logos/BABA.png",
+      "region": "China"
+    },
+    {
+      "symbol": "CLSK",
+      "name": "CleanSpark",
+      "sourceFeed": "0x951C5E9a2a065053035D4B812b1f6cA7e64c5102",
+      "logo": "logos/CLSK.png"
+    },
+    {
+      "symbol": "CRCL",
+      "name": "Circle",
+      "sourceFeed": "0x025Ba3B3569Ca7d15Da7BFC1648F13F06A072851"
+    },
+    {
+      "symbol": "CRWV",
+      "name": "CoreWeave",
+      "sourceFeed": "0x288b837A17fED1aa00c1df832ef79D0C77336c10"
+    },
+    {
+      "symbol": "DELL",
+      "name": "Dell",
+      "sourceFeed": "0xe9B94828424a8Efe6e773c28AB5Fd486851867c8",
+      "logo": "logos/DELL.png"
+    },
+    {
+      "symbol": "EWY",
+      "name": "South Korea ETF",
+      "sourceFeed": "0x26bca2a89D2D23787ada8F91B849608c51A26977",
+      "type": "ETF",
+      "region": "South Korea"
+    },
+    {
+      "symbol": "GME",
+      "name": "GameStop",
+      "sourceFeed": "0x42A4652D447A5B0bccF3B265bE8530b85A33b3A2",
+      "logo": "logos/GME.png"
+    },
+    {
+      "symbol": "INTC",
+      "name": "Intel",
+      "sourceFeed": "0x127B1DeDeE6269E962a59E6C1295b4002c56c403",
+      "logo": "logos/INTC.png"
+    },
+    {
+      "symbol": "IONQ",
+      "name": "IonQ",
+      "sourceFeed": "0x926D7D95E554D1e671EB2C0d238fe37a2C23A64E",
+      "logo": "logos/IONQ.png"
+    },
+    {
+      "symbol": "MU",
+      "name": "Micron",
+      "sourceFeed": "0x5b40F4E78FA58B60a4F59b8cc8cB8d2Fb0690467",
+      "logo": "logos/MU.png"
+    },
+    {
+      "symbol": "NBIS",
+      "name": "Nebius",
+      "sourceFeed": "0xCa59A8F53bf4E0628CC0b1BD3a2216F2F8E04770",
+      "logo": "logos/NBIS.png",
+      "region": "Netherlands"
+    },
+    {
+      "symbol": "ORCL",
+      "name": "Oracle",
+      "sourceFeed": "0x2a07f8d87d369Bd8Bc36472337ae02d512a7b5e5",
+      "logo": "logos/ORCL.png"
+    },
+    {
+      "symbol": "RGTI",
+      "name": "Rigetti",
+      "sourceFeed": "0xC9C477AEfF7eD1BB89B84F7907E2e11707491466",
+      "logo": "logos/RGTI.png"
+    },
+    {
+      "symbol": "RKLB",
+      "name": "Rocket Lab",
+      "sourceFeed": "0x955c60932E517B36be137Eee78E65343cBFC9D29",
+      "logo": "logos/RKLB.png"
+    },
+    {
+      "symbol": "SLV",
+      "name": "Silver ETF",
+      "sourceFeed": "0xdA81cD9c76F1D3Ea32655dfFc7408ef22BB0Ee2a",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SNDK",
+      "name": "Sandisk",
+      "sourceFeed": "0xd1016D9Da414B13D55abe02221A8A145eB89aA0D"
+    },
+    {
+      "symbol": "SPCX",
+      "name": "SpaceX",
+      "sourceFeed": "0x42a95341ff361e81fd934F39943c5C98F6991844",
+      "logo": "logos/SPCX.png"
+    },
+    {
+      "symbol": "TSM",
+      "name": "TSMC",
+      "sourceFeed": "0xB48D6D5729Ca032ca43729F4b605bBf9f257A84d",
+      "logo": "logos/TSM.png",
+      "region": "Taiwan"
+    },
+    {
+      "symbol": "USAR",
+      "name": "USA Rare Earth",
+      "sourceFeed": "0x451B1295aA84FD6d6b58af1a5002eA1b1A1913A0"
+    },
+    {
+      "symbol": "USO",
+      "name": "Oil ETF",
+      "sourceFeed": "0x6D054DECb74Cf8ef3675B0Abc100e02921176EdF",
+      "logo": "logos/USO.png",
+      "type": "ETF"
     }
   ],
+
 };

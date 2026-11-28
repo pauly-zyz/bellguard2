@@ -2,7 +2,8 @@
 //
 // Each run:
 //  1. Mirror prices: copy every market's latest Chainlink answer (and its original timestamp)
-//     from the source chain into the PushPriceFeed on the perps chain.
+//     from the source chain into the PushPriceFeed on the perps chain. Moves under 0.05%
+//     are skipped unless the on-chain price is 30+ minutes old.
 //  2. Liquidate positions below maintenance margin.
 //  3. In the pre-close window, trim positions above the weekend leverage cap.
 //  4. Poke markets whose borrow index hasn't moved for 6 hours (keeps weekend fees exact).
@@ -77,6 +78,9 @@ async function main() {
     ]);
     const [, answer, , updatedAt] = s;
     if (updatedAt <= t[3]) continue; // already mirrored
+    // Save gas: skip moves under 0.05% unless the on-chain price is 30+ minutes old.
+    const move = t[1] > 0n ? Number(answer > t[1] ? answer - t[1] : t[1] - answer) / Number(t[1]) : 1;
+    if (move < 0.0005 && now - t[3] < 1800n) continue;
     if (updatedAt > now) { console.log(`  ${m.symbol}: source time ahead of perps chain, next run`); continue; }
     await send(`${m.symbol} price ${(Number(answer) / 1e8).toFixed(2)}`, { address: m.feed, abi: FEED, functionName: "update", args: [answer, updatedAt] });
   }

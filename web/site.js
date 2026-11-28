@@ -207,13 +207,16 @@
     const P = window.BELLGUARD_PERPS;
     if (!host || !P) return;
     const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-    host.innerHTML = P.markets.map((m, i) => "<div class='tt-card'><span class='logo' aria-hidden='true'><span class='ini'>" + esc(m.symbol.slice(0, 4)) + "</span>"
+    // A global mix on the home page; the Trade page lists all markets.
+    const PICK = ["TSLA", "NVDA", "AAPL", "META", "ASML", "BABA", "TSM", "EWY", "SPY", "QQQ", "SLV", "USO"];
+    const shown = PICK.map((sym) => P.markets.find((m) => m.symbol === sym)).filter(Boolean);
+    host.innerHTML = shown.map((m, i) => "<div class='tt-card'><span class='logo' aria-hidden='true'><span class='ini'>" + esc(m.symbol.slice(0, 4)) + "</span>"
       + (m.logo ? "<img src='" + esc(m.logo) + "' alt='' loading='lazy'>" : "") + "</span>"
       + "<span class='tk'>" + esc(m.symbol) + "</span><span class='px' data-px='" + i + "'>–</span>"
-      + "<span class='nm'>" + esc(m.name) + "</span>"
+      + "<span class='nm'>" + esc(m.region ? m.name + " · " + m.region : m.name) + "</span>"
       + "<span class='acts'><a class='l' href='trade.html?m=" + esc(m.symbol) + "&side=long'>Long</a><a class='s' href='trade.html?m=" + esc(m.symbol) + "&side=short'>Short</a></span></div>").join("");
     host.querySelectorAll(".logo img").forEach((img) => img.addEventListener("error", () => img.remove()));
-    const body = P.markets.map((m, i) => ({ jsonrpc: "2.0", id: i, method: "eth_call", params: [{ to: m.sourceFeed, data: "0xfeaf968c" }, "latest"] }));
+    const body = shown.map((m, i) => ({ jsonrpc: "2.0", id: i, method: "eth_call", params: [{ to: m.sourceFeed, data: "0xfeaf968c" }, "latest"] }));
     const load = async (url) => {
       const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
       if (!res.ok) throw new Error("rpc " + res.status);

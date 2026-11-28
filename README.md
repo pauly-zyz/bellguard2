@@ -36,7 +36,7 @@ large reopen gaps, not as a weekly loss refund.
 
 ## Bellguard Perps (Elysium mainnet)
 
-Long or short stock prices up to 5x, settled in USDC, live at [bellguard.app/trade](https://www.bellguard.app/trade).
+Long or short 34 stocks and ETFs up to 20x, settled in USDC, live at [bellguard.app/trade](https://www.bellguard.app/trade).
 Deployed 2026-11-27 on Elysium (chain 99901): engine `0x44d1b20C4827348e2B83e968210283BdBAC63d60`,
 vault `0x8ac90e41e8d569A7645C823521939517b8cc4aD9`, calendar `0x93bBBc85841869DcB4C559e80C96986fBa1956C2`.
 All addresses: [`contracts/deployments/perps-99901.json`](contracts/deployments/perps-99901.json). Design and limits:

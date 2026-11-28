@@ -67,21 +67,29 @@
       <p class="eyebrow">Bellguard Perps · Elysium</p>
       <h1>Long or short stocks, <em style="color:var(--brass)">bell-aware</em></h1>
     </div>
-    <p class="muted" style="max-width:48ch">Up to 5x on TSLA, NVDA, SPY and more, settled in USD. Trading pauses when the stock market closes, so nobody trades a frozen weekend price.</p>
+    <p class="muted" style="max-width:48ch">Up to 20x on 34 stocks and ETFs — US tech, ASML, Alibaba, TSMC, Korea, silver and oil — settled in USD. Trading pauses when the stock market closes, so nobody trades a frozen weekend price.</p>
   </div>
 
   <div class="banner wide" id="t-preview">
     <strong>Preview.</strong> Bellguard Perps isn't live on Elysium yet. Prices are live from Chainlink; trading switches on once the contracts are deployed.
   </div>
   <div class="banner wide" id="t-live" hidden>
-    <strong>Live on Elysium.</strong> Leveraged trading can lose your whole collateral. Launch limits: up to 5x and small position caps per market.
+    <strong>Live on Elysium.</strong> Leveraged trading can lose your whole collateral. Limits: up to 20x (5x in the last two hours before the bell) and small position caps per market.
   </div>
   <p class="log" id="t-log"></p>
 
   <div class="trade-grid">
     <aside class="panel t-markets" aria-labelledby="tm-h">
       <div class="panel-head"><h2 id="tm-h" style="font-size:var(--step-1)">Markets</h2><span class="pill open" id="t-pill">Market open</span></div>
-      <input id="t-search" type="search" placeholder="Search" aria-label="Search markets" autocomplete="off">
+      <div class="t-mfilters">
+        <input id="t-search" type="search" placeholder="Search 34 markets" aria-label="Search markets" autocomplete="off">
+        <div class="seg" id="t-mf" role="group" aria-label="Filter markets">
+          <button type="button" data-f="all" class="on">All</button>
+          <button type="button" data-f="us">US</button>
+          <button type="button" data-f="global">Global</button>
+          <button type="button" data-f="etf">ETFs</button>
+        </div>
+      </div>
       <div class="t-list" id="t-list" role="listbox" aria-label="Markets"></div>
     </aside>
 
@@ -125,9 +133,9 @@
         <span class="t-conv" id="t-conv" hidden></span>
       </div>
       <div class="field">
-        <label for="t-lev">Leverage <b id="t-lev-v">2x</b></label>
-        <input id="t-lev" type="range" min="1" max="5" step="1" value="2">
-        <div class="t-ticks"><span>1x</span><span>2x</span><span>3x</span><span>4x</span><span>5x</span></div>
+        <label for="t-lev">Leverage <b id="t-lev-v">5x</b></label>
+        <input id="t-lev" type="range" min="1" max="20" step="1" value="5">
+        <div class="t-ticks"><span>1x</span><span>5x</span><span>10x</span><span>15x</span><span>20x</span></div>
       </div>
       <dl class="kv t-sum" id="t-sum"></dl>
       <div class="t-scen" id="t-scen" aria-label="Profit and loss if the price moves"></div>

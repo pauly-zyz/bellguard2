@@ -11,7 +11,7 @@ const SYM = D && D.testToken ? "tUSD" : (P.collateralSymbol || "USDC");
 const WINDOWS = window.BELLGUARD_WINDOWS || [];
 
 // Defaults match contracts/script/DeployPerps.s.sol; replaced by on-chain values once deployed.
-let params = { openFeeBps: 8, closeFeeBps: 8, spreadBps: 5, maintenanceBps: 100, maxProfitBps: 90000, borrowBpsPerDay: 3, closedBorrowMultiplier: 3, maxLeverage: 5, weekendMaxLeverage: 3, preCloseWindow: 7200 };
+let params = { openFeeBps: 8, closeFeeBps: 8, spreadBps: 5, maintenanceBps: 100, maxProfitBps: 90000, borrowBpsPerDay: 3, closedBorrowMultiplier: 3, maxLeverage: 20, weekendMaxLeverage: 5, preCloseWindow: 7200 };
 
 const ABI = {
   feed: parseAbi([
@@ -159,12 +159,14 @@ async function loadSpark(i) {
 
 // ---------------------------------------------------------------- rendering
 
+let marketFilter = "all";
 function renderList() {
   const q = ($("t-search").value || "").trim().toLowerCase();
+  const pass = (m) => marketFilter === "all" || (marketFilter === "etf" ? m.type === "ETF" : marketFilter === "global" ? !!m.region : !m.region && m.type !== "ETF");
   $("t-list").innerHTML = markets.map((m, i) => ({ m, i }))
-    .filter(({ m }) => !q || m.symbol.toLowerCase().includes(q) || m.name.toLowerCase().includes(q))
+    .filter(({ m }) => pass(m) && (!q || m.symbol.toLowerCase().includes(q) || m.name.toLowerCase().includes(q) || (m.region || "").toLowerCase().includes(q)))
     .map(({ m, i }) => "<button type='button' class='t-item' role='option' data-i='" + i + "' aria-selected='" + (i === sel) + "'>"
-      + logoHtml(m) + "<span class='tk'>" + esc(m.symbol) + "<small>" + esc(m.name) + "</small></span><span class='px'>" + px(m.price) + "</span></button>").join("");
+      + logoHtml(m) + "<span class='tk'>" + esc(m.symbol) + "<small>" + esc(m.region ? m.name + " · " + m.region : m.name) + "</small></span><span class='px'>" + px(m.price) + "</span></button>").join("");
 }
 
 function renderHead() {
@@ -182,7 +184,7 @@ function renderHead() {
   }
   const ch = first && m.price ? (m.price / first - 1) * 100 : null;
   $("t-head").innerHTML = logoHtml(m, "lg")
-    + "<div class='who'><span class='tk'>" + esc(m.symbol) + "<span class='muted'> / USD</span></span><span class='nm'>" + esc(m.name) + (m.type ? " · " + m.type : "") + "</span></div>"
+    + "<div class='who'><span class='tk'>" + esc(m.symbol) + "<span class='muted'> / USD</span></span><span class='nm'>" + esc(m.name) + (m.region ? " · " + esc(m.region) : "") + (m.type ? " · " + m.type : "") + "</span></div>"
     + "<div class='px'><b>" + px(m.price) + "</b><span>" + (ch == null ? "" : "<em class='" + (ch >= 0 ? "gain" : "loss") + "'>" + (ch >= 0 ? "▲ +" : "▼ ") + ch.toFixed(2) + "% 24h</em> · ") + "Chainlink " + ago(m.updated) + "</span></div>";
   const rows = [
     st.closed
@@ -755,6 +757,12 @@ document.querySelectorAll("[data-sym]").forEach((e) => { e.textContent = SYM; })
 document.querySelectorAll("[data-perps]").forEach((b) => { b.disabled = !D; });
 $("t-list").addEventListener("click", (e) => { const b = e.target.closest(".t-item"); if (b) select(Number(b.dataset.i)); });
 $("t-search").addEventListener("input", renderList);
+$("t-mf").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  marketFilter = b.dataset.f;
+  document.querySelectorAll("#t-mf button").forEach((x) => x.classList.toggle("on", x === b));
+  renderList();
+});
 $("t-long").addEventListener("click", () => { isLong = true; $("t-long").classList.add("on"); $("t-short").classList.remove("on"); renderSummary(); });
 $("t-short").addEventListener("click", () => { isLong = false; $("t-short").classList.add("on"); $("t-long").classList.remove("on"); renderSummary(); });
 $("t-lev").addEventListener("input", renderSummary);

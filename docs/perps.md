@@ -4,6 +4,13 @@ Long or short stock prices with leverage, settled in a USD stablecoin, against a
 vault. Built for stocks, whose prices stop over the weekend. Target: **Elysium mainnet
 (chain 99901), collateral USDC (`0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65`)**. Not audited.
 
+## Markets
+
+34 markets (Chainlink feeds on chain 4663, relayed by the keeper): TSLA, NVDA, AAPL, AMZN, GOOGL,
+META, MSFT, PLTR, COIN, MSTR, AMD, CRCL, CRWV, DELL, GME, INTC, IONQ, MU, ORCL, RGTI, RKLB, SNDK,
+SPCX, USAR, CLSK; outside the US: ASML and NBIS (Netherlands), BABA (China), TSM (Taiwan);
+ETFs: SPY, QQQ, EWY (South Korea), SLV (silver), USO (oil). Add more with `script/UpdatePerps.s.sol`.
+
 ## Contracts (`contracts/src/perps/`)
 
 | Contract | Role |
@@ -21,7 +28,7 @@ vault. Built for stocks, whose prices stop over the weekend. Target: **Elysium m
    collateral still works.
 2. **Fresh price after reopen.** Trading needs a price published after the latest reopen.
 3. **Pre-close leverage cap.** In the last 2 hours before a close, new positions are limited to
-   3x, and anyone can trim older positions down to 3x for a 0.05% keeper fee.
+   5x, and anyone can trim older positions down to 5x for a 0.05% keeper fee.
 4. **Weekend borrow ×3.** Borrow fees accrue three times faster over closures. LPs carry the
    reopen gap and are paid for it.
 
@@ -45,8 +52,7 @@ the swap returned. Positions stay USDC-collateralised and pay out in USDC.
   position closes, and LPs can only withdraw unreserved assets.
 - Reserves are limited to 80% of vault assets; open interest is capped per market and side.
 - 1% maintenance margin, 0.2% liquidation reward, 0.08% open and close fees, 0.05% spread,
-  0.03% per day borrow fee. Max leverage 5x for launch (the contract allows the owner
-  to raise it later, up to 100x, within the bounds checked in `setParams`).
+  0.03% per day borrow fee. Max leverage 20x (raised from the 5x launch setting on 2026-11-28).
 
 ## Known limits (before any mainnet use)
 
