@@ -18,7 +18,16 @@ BEKE, FUTU, TCOM and the ETFs FXI, KWEB, MCHI. Their feeds are deployed
 (`PYTH_API_KEY`). Without prices they can't trade: the engine rejects stale or missing prices.
 Charts for these markets are built from the feed's own on-chain price updates.
 
+**Gold:** GLD (SPDR Gold Trust ETF, tracks the gold price), Chainlink `GLD / USD` proxy
+`0x470A51258068043bd43dC0a56245625C9fE86eB0` on chain 4663. Spot XAU/USD would need a Pyth plan with
+metals. Listed by the owner with the same admin button, which only offers markets whose feed already
+has a recent price.
+
 Markets are grouped by country on the Trade page (`country` in `web/perps-config.js`).
+
+The public Elysium RPC allows only a few calls per burst, so the Trade page folds reads into
+Multicall3 (`0xcA11…CA11`) and the relay (`api/rpc.js`) forwards batches upstream five calls at a
+time, retrying rate-limited calls.
 
 ## Contracts (`contracts/src/perps/`)
 

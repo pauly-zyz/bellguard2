@@ -1,1 +1,74 @@
-[{"symbol":"PDD","feed":"0x121Bba5ea7fCE8424f9f42ba39fd152e45062709"},{"symbol":"JD","feed":"0xa3aAd6A026D2240a916fdd0ed10b50Ea4196Cf77"},{"symbol":"BIDU","feed":"0xe73e555098206b6fD9cD757F81d2777Eed4958C6"},{"symbol":"NIO","feed":"0x0be24f876189314Ef5574fE3E47952524CFe0759"},{"symbol":"LI","feed":"0x67645C5ccbeB943841402D86d4Df0D5F0F48be3F"},{"symbol":"XPEV","feed":"0x9E2b83e2ED3e637341ADe3f693c25a7D4efd545d"},{"symbol":"TME","feed":"0xC3b578a2c68d4E437B6A510ffafbB815E4501D22"},{"symbol":"BILI","feed":"0x022a8570F5EDCF06809dFE170CA8aac5861A6344"},{"symbol":"NTES","feed":"0x180559560d78B4a9282201Cc9c4bF9F270225527"},{"symbol":"YUMC","feed":"0xe3595253972A8108982eC56E554FFB1aC9e89365"},{"symbol":"EDU","feed":"0x5b6f4db573C36fD5B900f165Fa2360554Df0BcF0"},{"symbol":"BEKE","feed":"0x7C5514eeBb6C92b35a7F76C9C8C81b0969162380"},{"symbol":"FUTU","feed":"0xDe5D7ac3A53E36d5686095e2EEB3B6A34A56338b"},{"symbol":"TCOM","feed":"0xf299C8A7C5be0F1aabFb831f268A660d66bF6B6C"},{"symbol":"FXI","feed":"0x533097Bc4E878115Ad30646b72Dc7C6D71EC33Bd"},{"symbol":"KWEB","feed":"0x25C984f2b64379E7E33C85560b268c44162FC566"},{"symbol":"MCHI","feed":"0x8fA9c0bD06d54cFA68501ff426De67499379D778"}]
+[
+  {
+    "symbol": "PDD",
+    "feed": "0x121Bba5ea7fCE8424f9f42ba39fd152e45062709"
+  },
+  {
+    "symbol": "JD",
+    "feed": "0xa3aAd6A026D2240a916fdd0ed10b50Ea4196Cf77"
+  },
+  {
+    "symbol": "BIDU",
+    "feed": "0xe73e555098206b6fD9cD757F81d2777Eed4958C6"
+  },
+  {
+    "symbol": "NIO",
+    "feed": "0x0be24f876189314Ef5574fE3E47952524CFe0759"
+  },
+  {
+    "symbol": "LI",
+    "feed": "0x67645C5ccbeB943841402D86d4Df0D5F0F48be3F"
+  },
+  {
+    "symbol": "XPEV",
+    "feed": "0x9E2b83e2ED3e637341ADe3f693c25a7D4efd545d"
+  },
+  {
+    "symbol": "TME",
+    "feed": "0xC3b578a2c68d4E437B6A510ffafbB815E4501D22"
+  },
+  {
+    "symbol": "BILI",
+    "feed": "0x022a8570F5EDCF06809dFE170CA8aac5861A6344"
+  },
+  {
+    "symbol": "NTES",
+    "feed": "0x180559560d78B4a9282201Cc9c4bF9F270225527"
+  },
+  {
+    "symbol": "YUMC",
+    "feed": "0xe3595253972A8108982eC56E554FFB1aC9e89365"
+  },
+  {
+    "symbol": "EDU",
+    "feed": "0x5b6f4db573C36fD5B900f165Fa2360554Df0BcF0"
+  },
+  {
+    "symbol": "BEKE",
+    "feed": "0x7C5514eeBb6C92b35a7F76C9C8C81b0969162380"
+  },
+  {
+    "symbol": "FUTU",
+    "feed": "0xDe5D7ac3A53E36d5686095e2EEB3B6A34A56338b"
+  },
+  {
+    "symbol": "TCOM",
+    "feed": "0xf299C8A7C5be0F1aabFb831f268A660d66bF6B6C"
+  },
+  {
+    "symbol": "FXI",
+    "feed": "0x533097Bc4E878115Ad30646b72Dc7C6D71EC33Bd"
+  },
+  {
+    "symbol": "KWEB",
+    "feed": "0x25C984f2b64379E7E33C85560b268c44162FC566"
+  },
+  {
+    "symbol": "MCHI",
+    "feed": "0x8fA9c0bD06d54cFA68501ff426De67499379D778"
+  },
+  {
+    "symbol": "GLD",
+    "feed": "0x83971Fd1fC8E04332b466B8A126E4956B3f22724"
+  }
+]

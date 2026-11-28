@@ -630,6 +630,15 @@ window.BELLGUARD_PERPS = {
       "pending": true,
       "type": "ETF",
       "feed": "0x8fA9c0bD06d54cFA68501ff426De67499379D778"
+    },
+    {
+      "symbol": "GLD",
+      "name": "Gold (SPDR Gold ETF)",
+      "sourceFeed": "0x470A51258068043bd43dC0a56245625C9fE86eB0",
+      "country": "Commodities",
+      "type": "ETF",
+      "pending": true,
+      "feed": "0x83971Fd1fC8E04332b466B8A126E4956B3f22724"
     }
   ],
 

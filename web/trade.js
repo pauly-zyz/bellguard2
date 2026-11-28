@@ -64,12 +64,15 @@ const perpsChain = defineChain({
   id: P.chainId, name: P.chain.name, nativeCurrency: P.chain.nativeCurrency,
   rpcUrls: { default: { http: [P.chain.rpc] } },
   blockExplorers: P.chain.explorer ? { default: { name: "Explorer", url: P.chain.explorer } } : undefined,
+  contracts: { multicall3: { address: "0xcA11bde05977b3631167028862bE2a173976CA11" } },
 });
 const transportFor = (relay, rpc) => fallback([
-  ...(relay ? [http(relay, { retryCount: 2, retryDelay: 800, timeout: 12_000, batch: true })] : []),
-  http(rpc, { retryCount: 2, retryDelay: 1000, timeout: 12_000, batch: true }),
+  ...(relay ? [http(relay, { retryCount: 2, retryDelay: 800, timeout: 12_000, batch: { batchSize: 20 } })] : []),
+  http(rpc, { retryCount: 2, retryDelay: 1000, timeout: 12_000, batch: { batchSize: 20 } }),
 ]);
-const perps = createPublicClient({ chain: perpsChain, transport: transportFor(P.chain.relay, P.chain.rpc) });
+// Reads made at the same time are folded into one Multicall3 call: the public Elysium RPC only
+// allows a few calls per burst, and the page reads dozens of markets at once.
+const perps = createPublicClient({ chain: perpsChain, transport: transportFor(P.chain.relay, P.chain.rpc), batch: { multicall: { batchSize: 4096, wait: 20 } } });
 const source = createPublicClient({
   chain: defineChain({ id: P.source.chainId, name: "source", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: [P.source.rpc] } }, contracts: { multicall3: { address: P.source.multicall3 } } }),
   transport: transportFor(P.source.relay, P.source.rpc),
@@ -731,11 +734,17 @@ async function loadAdmin() {
   $("ta-updater-row").hidden = feedOwner.toLowerCase() !== me;
   // Configured markets whose feeds are deployed but which the engine doesn't list yet (checked on-chain).
   const onChain = new Set((await engineMarketList()).map((x) => x.symbol));
-  pendingAdds = P.markets.filter((m) => m.pending && m.feed && !onChain.has(m.symbol));
+  // Only offer markets whose feed already has a recent price; the rest wait for their price source.
+  const candidates = P.markets.filter((m) => m.pending && m.feed && !onChain.has(m.symbol));
+  const rounds = await Promise.all(candidates.map((m) => perps.readContract({ address: m.feed, abi: ABI.feed, functionName: "latestRoundData" }).catch(() => null)));
+  const fresh = (r) => r && r[1] > 0n && Date.now() / 1000 - Number(r[3]) < 4 * 86400; // covers a long weekend
+  pendingAdds = candidates.filter((m, i) => fresh(rounds[i]));
+  const waiting = candidates.filter((m, i) => !fresh(rounds[i]));
   const engineOwner = rows.find((r) => r.k === "engine").owner === me;
   $("ta-add-row").hidden = !(engineOwner && pendingAdds.length);
   $("ta-add").textContent = "Add " + pendingAdds.length + " market" + (pendingAdds.length === 1 ? "" : "s");
-  $("ta-add-note").textContent = "Ready to list: " + pendingAdds.map((m) => m.symbol).join(", ") + ". One transaction each. They trade once their price feed has a recent price.";
+  $("ta-add-note").textContent = "Ready to list: " + pendingAdds.map((m) => m.symbol).join(", ") + ". One transaction each."
+    + (waiting.length ? " Waiting for a price first: " + waiting.map((m) => m.symbol).join(", ") + "." : "");
   $("ta-list").innerHTML += "<dt>Price updater</dt><dd>" + updater + "</dd>";
 }
 
