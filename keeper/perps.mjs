@@ -15,6 +15,8 @@
 //   PYTH_API_KEY       Pyth Hermes key, for markets priced by Pyth (skipped without it)
 //   DEPLOYMENT         [../contracts/deployments/perps-99901.json]
 //   DRY_RUN=1          report only
+//   LOOP_MINUTES=n     keep running for n minutes, one pass every INTERVAL_SECONDS [120]
+//                      (GitHub's frequent schedules are unreliable, so one job covers hours)
 
 import fs from "fs";
 import { createPublicClient, createWalletClient, http, parseAbi, defineChain } from "viem";
@@ -97,6 +99,7 @@ async function loadPyth(symbols) {
 }
 
 async function main() {
+  sent = 0;
   const now = (await pub.getBlock()).timestamp;
   console.log(`perps chain ${dep.chainId}, block time ${new Date(Number(now) * 1000).toISOString()}, ${dep.markets.length} markets`);
 
@@ -150,4 +153,19 @@ async function main() {
   console.log(`done: ${open} open positions, ${sent} transactions`);
 }
 
-main().catch((e) => { console.error(e.shortMessage || e.message); process.exit(1); });
+const LOOP = Number(process.env.LOOP_MINUTES || 0);
+if (!LOOP) {
+  main().catch((e) => { console.error(e.shortMessage || e.message); process.exit(1); });
+} else {
+  const until = Date.now() + LOOP * 60_000;
+  const every = Number(process.env.INTERVAL_SECONDS || 120) * 1000;
+  (async () => {
+    while (Date.now() < until) {
+      const started = Date.now();
+      try { await main(); } catch (e) { console.log("pass failed: " + (e.shortMessage || e.message).split("\n")[0]); }
+      const wait = every - (Date.now() - started);
+      if (wait > 0 && Date.now() + wait < until) await new Promise((r) => setTimeout(r, wait)); else if (wait > 0) break;
+    }
+    process.exit(0);
+  })();
+}

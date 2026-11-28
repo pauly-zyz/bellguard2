@@ -245,10 +245,18 @@ window.BELLGUARD_PERPS = {
         "name": "Oil ETF",
         "market": 33,
         "feed": "0xd2dAf452897D7E37De51318b4Ca31001a6037927"
+      },
+      {
+        "symbol": "GLD",
+        "name": "Gold (SPDR Gold ETF)",
+        "market": 34,
+        "feed": "0x83971Fd1fC8E04332b466B8A126E4956B3f22724"
       }
     ],
-    "maxLeverage": 20
+    "maxLeverage": 20,
+    "rewardsDistributor": "0x578D2Cc9839a5541deeb40e78ed62E752C58C87b"
   },
+
 
   markets: [
     {

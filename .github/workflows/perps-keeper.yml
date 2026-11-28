@@ -3,9 +3,12 @@ name: Perps keeper (Elysium)
 # Mirrors Chainlink stock prices to Bellguard Perps on Elysium, liquidates unsafe
 # positions and trims leverage before the market closes. Runs only once the perps
 # deployment file exists. Needs the secret PERPS_KEEPER_KEY (the feed updater wallet).
+# Each run keeps working for ~5h45m (a pass every 2 minutes); the hourly schedule starts the next
+# one, which waits in the queue until the current run ends. GitHub often delays or skips
+# frequent schedules, so this keeps prices fresh even when a scheduled start is late.
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "7 * * * *"
   workflow_dispatch: {}
 
 concurrency:
@@ -15,7 +18,7 @@ concurrency:
 jobs:
   keep:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 355
     defaults:
       run:
         working-directory: keeper
@@ -36,4 +39,6 @@ jobs:
           PERPS_KEEPER_KEY: ${{ secrets.PERPS_KEEPER_KEY }}
           PYTH_API_KEY: ${{ secrets.PYTH_API_KEY }}
           DRY_RUN: ${{ secrets.PERPS_KEEPER_KEY == '' && '1' || '0' }}
+          LOOP_MINUTES: "345"
+          INTERVAL_SECONDS: "120"
         run: npm run perps
