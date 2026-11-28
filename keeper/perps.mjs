@@ -77,7 +77,12 @@ async function loadPyth(symbols) {
   if (!process.env.PYTH_API_KEY) { console.log(`  ${symbols.length} Pyth markets skipped: PYTH_API_KEY not set`); return out; }
   const qs = symbols.map((s) => "ids[]=" + pythIds[s]).join("&");
   const res = await fetch("https://hermes.pyth.network/v2/updates/price/latest?parsed=true&" + qs, { headers: { Authorization: "Bearer " + process.env.PYTH_API_KEY } });
-  if (!res.ok) { console.log(`  Pyth request failed: HTTP ${res.status}`); process.exitCode = 1; return out; }
+  if (!res.ok) {
+    // Warn only: other markets keep running. 403 usually means the Pyth plan lacks equity data.
+    const why = res.status === 403 ? " (Pyth plan not entitled to these feeds; equity data needs a plan that includes it)" : "";
+    console.log(`  Pyth request failed: HTTP ${res.status}${why}; ${symbols.length} Pyth markets not updated`);
+    return out;
+  }
   const body = await res.json();
   const byId = Object.fromEntries((body.parsed || []).map((p) => ["0x" + p.id.replace(/^0x/, ""), p.price]));
   for (const s of symbols) {
